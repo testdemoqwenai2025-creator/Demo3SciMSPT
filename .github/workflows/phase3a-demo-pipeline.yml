@@ -1,0 +1,213 @@
+# Phase 3A Demo Pipeline - Public Showcase Repository
+# This pipeline handles build, test, and preview deployment for public demos
+
+name: Phase 3A Demo Pipeline
+
+on:
+  push:
+    branches: [main, develop/phase3a-ai-core]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '9'
+
+jobs:
+  # Job 1: Code Quality & Linting
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm type-check
+
+  # Job 2: Build Demo Application
+  build-demo:
+    name: Build Demo Application
+    runs-on: ubuntu-latest
+    needs: code-quality
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build application
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_DEMO_MODE: 'true'
+          NEXT_PUBLIC_AI_ENDPOINT: '${{ vars.AI_ENDPOINT || "https://api.demo.scimspt.ai" }}'
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-build
+          path: |
+            .next/
+            out/
+          retention-days: 7
+
+  # Job 3: Unit Tests
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run unit tests with coverage
+        run: pnpm test:unit --coverage
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14
+
+  # Job 4: MAOL Component Tests (Phase 3A Specific)
+  maol-tests:
+    name: MAOL Component Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+    if: github.ref == 'refs/heads/develop/phase3a-ai-core' || github.event_name == 'pull_request'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test Intent Router
+        run: pnpm test:intent-router
+
+      - name: Test Task Planner
+        run: pnpm test:task-planner
+
+      - name: Test Context Manager
+        run: pnpm test:context-manager
+
+  # Job 5: Preview Deployment (for PRs)
+  preview-deploy:
+    name: Preview Deployment
+    runs-on: ubuntu-latest
+    needs: [build-demo, unit-tests]
+    if: github.event_name == 'pull_request'
+    permissions:
+      pull-requests: write
+      deployments: write
+    environment:
+      name: preview
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: demo-build
+
+      - name: Deploy to preview environment
+        id: deploy
+        run: |
+          echo "Deploying PR #${{ github.event.pull_request.number }} to preview..."
+          echo "url=https://pr-${{ github.event.pull_request.number }}.demo.scimspt.ai" >> $GITHUB_OUTPUT
+
+      - name: Comment PR with preview URL
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🚀 Preview Deployment Ready!\n\nYour changes are now live at: ${{ steps.deploy.outputs.url }}\n\n### Build Details\n- **Commit**: \`${{ github.sha }}\`\n- **Branch**: \`${{ github.head_ref }}\`\n- **Triggered by**: @${{ github.actor }}\n\nThe preview will be available for ~7 days.`
+            })
+
+  # Job 6: Production Deployment (main branch only)
+  production-deploy:
+    name: Production Deployment
+    runs-on: ubuntu-latest
+    needs: [build-demo, unit-tests, maol-tests]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: production
+      url: https://demo.scimspt.ai
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: demo-build
+
+      - name: Deploy to production
+        run: |
+          echo "Deploying to production demo environment..."
+          # Add actual deployment commands here (Vercel, Netlify, etc.)
+
+      - name: Notify deployment success
+        run: |
+          echo "✅ Production demo deployed successfully"

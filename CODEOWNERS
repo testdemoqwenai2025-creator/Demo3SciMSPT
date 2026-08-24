@@ -1,0 +1,17 @@
+# CODEOWNERS - Public Demo Repository Code Ownership
+# Simplified ownership for public-facing demo repository
+
+# Global owner
+* @testdemoqwenai2025-creator
+
+# Public documentation and demos
+/docs/**            @testdemoqwenai2025-creator
+/demo/**            @testdemoqwenai2025-creator
+/examples/**        @testdemoqwenai2025-creator
+
+# CI/CD for public repo
+/.github/**         @testdemoqwenai2025-creator
+
+# Security files (restricted)
+/SECURITY.md        @testdemoqwenai2025-creator
+/CODEOWNERS         @testdemoqwenai2025-creator
