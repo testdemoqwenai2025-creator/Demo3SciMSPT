@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { PillarCard } from '@/components/PillarCard'
 import { DiagramGallery } from '@/components/DiagramGallery'
+import { DashboardCharts } from '@/components/Charts'
+import { APIDemoPanel } from '@/components/APIDemo'
 import Link from 'next/link'
 
 /**
@@ -780,11 +782,84 @@ export default function HomePage() {
         onClose={closeModal} 
       />
 
+      {/* ========== NEW: Interactive Dashboard ========== */}
+      <section className="interactive-dashboard section">
+        <div className="section-header">
+          <h2 className="section-title">
+            <span className="title-icon">📊</span>
+            Live Analytics Dashboard
+          </h2>
+          <p className="section-subtitle">
+            Real-time metrics with interactive charts - powered by Recharts
+          </p>
+        </div>
+
+        <DashboardCharts />
+      </section>
+
+      {/* ========== NEW: AI API Integration Demo ========== */}
+      <section className="api-demo-section section">
+        <div className="section-header">
+          <h2 className="section-title">
+            <span className="title-icon">🤖</span>
+            AI API Integration Showcase
+          </h2>
+          <p className="section-subtitle">
+            Experience free-tier AI capabilities with OpenAI, HuggingFace & Anthropic
+          </p>
+        </div>
+
+        <APIDemoPanel />
+      </section>
+
       <style jsx>{`
         /* ========== BASE STYLES ========== */
         .home-page-enhanced {
           animation: fadeInUp 0.6s ease-out;
           min-height: 100vh;
+        }
+
+        /* ========== SECTION HEADERS (New) ========== */
+        .section {
+          margin-bottom: 3rem;
+        }
+
+        .section-header {
+          text-align: center;
+          margin-bottom: 2rem;
+        }
+
+        .section-title {
+          font-size: clamp(1.75rem, 4vw, 2.5rem);
+          font-weight: 800;
+          color: var(--color-text-primary);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          margin-bottom: 8px;
+        }
+
+        .title-icon {
+          font-size: 1.75em;
+        }
+
+        .section-subtitle {
+          font-size: 1.1rem;
+          color: var(--color-text-secondary);
+          max-width: 600px;
+          margin: 0 auto;
+          line-height: 1.6;
+        }
+
+        /* ========== INTERACTIVE DASHBOARD ========== */
+        .interactive-dashboard {
+          padding: 2rem 0;
+        }
+
+        /* ========== API DEMO SECTION ========== */
+        .api-demo-section {
+          padding: 2rem 0;
         }
 
         /* ========== GLASS MORPHISM CARD ========== */

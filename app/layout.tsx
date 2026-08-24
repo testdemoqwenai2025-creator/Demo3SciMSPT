@@ -3,6 +3,8 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Navigation } from '@/components/Navigation'
 import { DNAHelix } from '@/components/DNAHelix'
+import { ToastProvider } from '@/components/Toast'
+import { SearchModal, SearchTrigger } from '@/components/Search'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -23,30 +25,41 @@ export default function RootLayout({
         <DNAHelix side="left" />
         <DNAHelix side="right" />
         
-        <div className="app-container">
-          <Navigation />
-          <main className="main-content">
-            {children}
-          </main>
-        </div>
+        <ToastProvider>
+          <div className="app-container">
+            <Navigation />
+            
+            {/* Search Trigger in header area */}
+            <div className="search-trigger-wrapper">
+              <SearchTrigger />
+            </div>
+            
+            <main className="main-content">
+              {children}
+            </main>
+          </div>
 
-        {/* Theme initialization script */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  const savedTheme = localStorage.getItem('scimspt-theme');
-                  if (savedTheme) {
-                    document.documentElement.setAttribute('data-theme', savedTheme);
-                  } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
-                    document.documentElement.setAttribute('data-theme', 'light');
-                  }
-                } catch (e) {}
-              })();
-            `,
-          }}
-        />
+          {/* Global Search Modal */}
+          <SearchModal />
+
+          {/* Theme initialization script */}
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                (function() {
+                  try {
+                    const savedTheme = localStorage.getItem('scimspt-theme');
+                    if (savedTheme) {
+                      document.documentElement.setAttribute('data-theme', savedTheme);
+                    } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+                      document.documentElement.setAttribute('data-theme', 'light');
+                    }
+                  } catch (e) {}
+                })();
+              `,
+            }}
+          />
+        </ToastProvider>
       </body>
     </html>
   )

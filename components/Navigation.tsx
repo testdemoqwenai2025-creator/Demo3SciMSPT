@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { ThemeToggle } from './ThemeToggle'
+import { SearchTrigger } from './Search'
 
 /**
  * Navigation Component - SciMSPT Phase 3
@@ -97,8 +98,11 @@ export function Navigation() {
           })}
         </div>
 
-        {/* Theme Toggle - Visible on all screens */}
-        <ThemeToggle />
+        {/* Search & Theme - Visible on all screens */}
+        <div className="nav-actions">
+          <SearchTrigger />
+          <ThemeToggle />
+        </div>
 
         {/* Mobile Menu Toggle */}
         <button
@@ -193,6 +197,14 @@ export function Navigation() {
         .nav-links-desktop {
           display: flex;
           gap: 0.25rem;
+          align-items: center;
+        }
+
+        /* Actions (Search + Theme) */
+        .nav-actions {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
         }
 
         @media (max-width: 1024px) {
