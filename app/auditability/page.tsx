@@ -1,20 +1,24 @@
 'use client'
 
-import { PillarCard } from '@/components/PillarCard'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import Link from 'next/link'
-import { useState, useEffect, useMemo } from 'react'
 
 /**
  * Auditability & Traceability Page - SciMSPT AI-Native Architecture
  * 
- * Comprehensive audit trail system for AI/ML agent decision tracking.
+ * ENHANCED PREMIUM EDITION - The Most Impressive Showcase Page!
+ * 
  * Features:
- * - Immutable structured reasoning logs
- * - Decision path tracing with non-linear action visualization
- * - Cryptographic proof verification (Merkle trees, hash chains)
- * - Real-time anomaly detection in agent behavior
- * - Compliance reporting and governance tools
- * - Interactive timeline and graph visualizations
+ * 1. REAL Cryptographic Demo (Web Crypto API SHA-256)
+ * 2. Live Audit Log Stream (auto-updating every 3-5 seconds)
+ * 3. Merkle Tree Builder (interactive construction)
+ * 4. Compliance Report Generator (GDPR, SOC2, HIPAA, ISO27001)
+ * 5. Decision Path Explorer (enhanced with probabilities)
+ * 6. Anomaly Detection Engine (ML-style simulation)
+ * 7. Access Control Simulator (RBAC permission matrix)
+ * 8. Blockchain-style Explorer (mining simulation)
+ * 9. Usage & Subscription section
+ * 10. Enhanced Visuals (dark theme, color-coded states)
  */
 
 // ============ TYPES & INTERFACES ============
@@ -22,1379 +26,1792 @@ import { useState, useEffect, useMemo } from 'react'
 interface AuditLogEntry {
   id: string
   timestamp: string
-  agentId: string
-  agentName: string
-  actionType: 'decision' | 'reasoning' | 'execution' | 'correction' | 'validation'
-  input: string
-  output: string
-  confidence: number
-  reasoningPath: string[]
-  metadata: Record<string, unknown>
+  actor: string
+  action: string
+  resource: string
+  hash: string
+  severity: 'info' | 'success' | 'warning' | 'error' | 'critical'
+}
+
+interface MerkleNode {
+  hash: string
+  left?: MerkleNode
+  right?: MerkleNode
+  data?: string
+  isLeaf?: boolean
+}
+
+interface Block {
+  index: number
+  timestamp: string
   hash: string
   previousHash: string
   nonce: number
+  data: string
 }
 
-interface DecisionNode {
-  id: string
-  label: string
-  type: 'root' | 'decision' | 'action' | 'outcome' | 'branch'
-  confidence: number
-  children: DecisionNode[]
-  timestamp: string
-  data?: Record<string, unknown>
-}
-
-interface AnomalyEvent {
-  id: string
-  timestamp: string
-  severity: 'critical' | 'high' | 'medium' | 'low' | 'info'
-  type: string
-  description: string
-  affectedAgents: string[]
-  suggestion: string
-  status: 'detected' | 'investigating' | 'resolved' | 'false_positive'
-}
-
-interface ComplianceRule {
-  id: string
+interface Role {
   name: string
-  category: 'GDPR' | 'SOC2' | 'HIPAA' | 'ISO27001' | 'Custom'
-  status: 'compliant' | 'partial' | 'non_compliant' | 'pending'
-  lastChecked: string
-  details: string
+  permissions: {
+    readLogs: boolean
+    writeLogs: boolean
+    deleteLogs: boolean
+    manageUsers: boolean
+    viewReports: boolean
+    exportData: boolean
+    modifyPermissions: boolean
+    systemConfig: boolean
+  }
+}
+
+interface PermissionChange {
+  timestamp: string
+  role: string
+  permission: string
+  oldValue: boolean
+  newValue: string
+  changedBy: string
+}
+
+interface ComplianceItem {
+  id: string
+  framework: string
+  category: string
+  requirement: string
+  description: string
+  checked: boolean
+  evidence?: string
+}
+
+interface AnomalyAlert {
+  id: string
+  timestamp: string
+  type: 'statistical_outlier' | 'pattern_break' | 'confidence_drift'
+  description: string
+  confidence: number
+  baseline: number
+  actual: number
+  status: 'detected' | 'acknowledged' | 'investigating' | 'false_positive' | 'resolved'
+}
+
+interface DecisionEvent {
+  id: string
+  timestamp: string
+  decision: string
+  chosenPath: string
+  confidence: number
+  alternatives: { path: string; probability: number; reason: string }[]
+  explanation: string
+}
+
+// ============ CRYPTOGRAPHIC UTILITIES (REAL Web Crypto API) ============
+
+async function computeSHA256(message: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(message)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+async function computeHashChain(entries: string[]): Promise<string[]> {
+  const hashes: string[] = []
+  let previousHash = '0'.repeat(64)
+  
+  for (const entry of entries) {
+    const combined = previousHash + entry
+    const hash = await computeSHA256(combined)
+    hashes.push(hash)
+    previousHash = hash
+  }
+  
+  return hashes
+}
+
+// ============ MERKLE TREE UTILITIES ============
+
+async function buildMerkleTree(leaves: string[]): Promise<MerkleNode> {
+  if (leaves.length === 0) {
+    return { hash: await computeSHA256('') }
+  }
+  
+  if (leaves.length === 1) {
+    return { hash: await computeSHA256(leaves[0]), data: leaves[0], isLeaf: true }
+  }
+  
+  const nodes: MerkleNode[] = await Promise.all(
+    leaves.map(async (leaf) => ({
+      hash: await computeSHA256(leaf),
+      data: leaf,
+      isLeaf: true as const
+    }))
+  )
+  
+  while (nodes.length > 1) {
+    const nextLevel: MerkleNode[] = []
+    
+    for (let i = 0; i < nodes.length; i += 2) {
+      const left = nodes[i]
+      const right = nodes[i + 1] || nodes[i]
+      const combinedHash = await computeSHA256(left.hash + right.hash)
+      nextLevel.push({ hash: combinedHash, left, right })
+    }
+    
+    nodes.splice(0, nodes.length, ...nextLevel)
+  }
+  
+  return nodes[0]
+}
+
+async function getMerkleProof(tree: MerkleNode, targetData: string, path: string[] = []): Promise<string[] | null> {
+  if (!tree) return null
+  
+  if (tree.isLeaf && tree.data === targetData) {
+    return path
+  }
+  
+  if (tree.left) {
+    const leftProof = await getMerkleProof(tree.left, targetData, [...path, tree.right?.hash || tree.left.hash])
+    if (leftProof) return leftProof
+  }
+  
+  if (tree.right) {
+    const rightProof = await getMerkleProof(tree.right, targetData, [...path, tree.left?.hash || tree.right.hash])
+    if (rightProof) return rightProof
+  }
+  
+  return null
+}
+
+async function verifyMerkleProof(leaf: string, proof: string[], rootHash: string): Promise<boolean> {
+  let currentHash = await computeSHA256(leaf)
+  
+  for (const sibling of proof) {
+    currentHash = await computeSHA256(currentHash + sibling)
+  }
+  
+  return currentHash === rootHash
+}
+
+// ============ BLOCKCHAIN UTILITIES ============
+
+async function mineBlock(index: number, previousHash: string, data: string, difficulty: number = 2): Promise<Block> {
+  const prefix = '0'.repeat(difficulty)
+  let nonce = 0
+  let hash = ''
+  
+  do {
+    nonce++
+    const content = `${index}${previousHash}${data}${nonce}`
+    hash = await computeSHA256(content)
+  } while (!hash.startsWith(prefix))
+  
+  return {
+    index,
+    timestamp: new Date().toISOString(),
+    hash,
+    previousHash,
+    nonce,
+    data
+  }
+}
+
+async function validateChain(chain: Block[]): Promise<{ valid: boolean; message: string }> {
+  for (let i = 1; i < chain.length; i++) {
+    const currentBlock = chain[i]
+    const previousBlock = chain[i - 1]
+    
+    // Verify hash
+    const content = `${currentBlock.index}${currentBlock.previousHash}${currentBlock.data}${currentBlock.nonce}`
+    const computedHash = await computeSHA256(content)
+    
+    if (computedHash !== currentBlock.hash) {
+      return { valid: false, message: `Block ${i}: Hash mismatch detected!` }
+    }
+    
+    if (currentBlock.previousHash !== previousBlock.hash) {
+      return { valid: false, message: `Block ${i}: Chain broken at this block!` }
+    }
+  }
+  
+  return { valid: true, message: 'Blockchain integrity verified ✓' }
 }
 
 // ============ MOCK DATA GENERATORS ============
 
-const generateHash = (): string => {
-  return Array.from({ length: 64 }, () => 
-    '0123456789abcdef'[Math.floor(Math.random() * 16)]
-  ).join('')
-}
+const actors = ['IntentClassifier', 'TaskPlanner', 'CodeGenerator', 'Validator', 'SecurityScanner', 'Admin', 'System', 'API Gateway']
+const actions = [
+  'Authenticated user session',
+  'Processed request',
+  'Generated code artifact',
+  'Validated output',
+  'Scanned for vulnerabilities',
+  'Logged decision point',
+  'Updated configuration',
+  'Exported audit trail',
+  'Modified permissions',
+  'Created compliance report'
+]
+const resources = ['/api/auth', '/api/generate', '/api/validate', '/config/rules', '/audit/logs', '/users/*', '/reports/*', '/permissions']
 
-const generateAuditLogs = (count: number): AuditLogEntry[] => {
-  const agents = [
-    { id: 'agent-001', name: 'IntentClassifier' },
-    { id: 'agent-002', name: 'TaskPlanner' },
-    { id: 'agent-003', name: 'CodeGenerator' },
-    { id: 'agent-004', name: 'Validator' },
-    { id: 'agent-005', name: 'SecurityScanner' },
-  ]
-  
-  const actions: AuditLogEntry['actionType'][] = ['decision', 'reasoning', 'execution', 'correction', 'validation']
-  const inputs = [
-    'User request: "Create authentication API endpoint"',
-    'Context: User is authenticated as admin',
-    'Pattern detected: RESTful resource naming',
-    'Constraint: Must use OAuth2.0 flow',
-    'Dependency: Database schema available',
-    'Risk assessment: Medium complexity task',
-    'Resource allocation: 2 GPU units requested',
-    'Timeout threshold: 30 seconds set',
-  ]
-  
-  const outputs = [
-    'Routed to CodeGenerator with high confidence',
-    'Decomposed into 5 subtasks',
-    'Generated 147 lines of TypeScript',
-    'Validation passed: All tests green',
-    'Security scan: No vulnerabilities found',
-    'Optimization applied: Reduced latency by 23%',
-    'Cache strategy: Implemented TTL=300s',
-    'Documentation: Auto-generated JSDoc comments',
-  ]
-  
-  const reasoningPaths = [
-    ['intent_analysis', 'entity_extraction', 'confidence_scoring', 'routing'],
-    ['task_decomposition', 'dependency_mapping', 'priority_assignment'],
-    ['template_selection', 'code_generation', 'optimization'],
-    ['syntax_check', 'semantic_analysis', 'test_generation'],
-    ['pattern_matching', 'vulnerability_scan', 'compliance_check'],
-  ]
-
-  let prevHash = '0'.repeat(64)
-  
-  return Array.from({ length: count }, (_, i) => {
-    const agent = agents[Math.floor(Math.random() * agents.length)]
-    const action = actions[Math.floor(Math.random() * actions.length)]
-    const hash = generateHash()
-    
-    const entry: AuditLogEntry = {
-      id: `log-${String(i + 1).padStart(6, '0')}`,
-      timestamp: new Date(Date.now() - i * 45000).toISOString(),
-      agentId: agent.id,
-      agentName: agent.name,
-      actionType: action,
-      input: inputs[Math.floor(Math.random() * inputs.length)],
-      output: outputs[Math.floor(Math.random() * outputs.length)],
-      confidence: Math.round((Math.random() * 0.4 + 0.6) * 100) / 100,
-      reasoningPath: reasoningPaths[Math.floor(Math.random() * reasoningPaths.length)],
-      metadata: {
-        sessionId: `sess-${Math.random().toString(36).substr(2, 9)}`,
-        userId: `user-${Math.floor(Math.random() * 1000)}`,
-        requestId: `req-${Math.random().toString(36).substr(2, 12)}`,
-        processingTime: Math.round(Math.random() * 1000) + 50,
-        memoryUsage: Math.round(Math.random() * 512) + 64,
-        modelVersion: `v${Math.floor(Math.random() * 5) + 1}.${Math.floor(Math.random() * 10)}.${Math.floor(Math.random() * 20)}`,
-      },
-      hash,
-      previousHash: prevHash,
-      nonce: Math.floor(Math.random() * 1000000),
-    }
-    
-    prevHash = hash
-    return entry
-  })
-}
-
-const generateDecisionTree = (): DecisionNode => {
+function generateLiveLogEntry(id: number): AuditLogEntry {
+  const severities: AuditLogEntry['severity'][] = ['info', 'info', 'info', 'success', 'warning', 'error']
   return {
-    id: 'root',
-    label: 'User Intent Received',
-    type: 'root',
-    confidence: 1.0,
+    id: `live-${id.toString().padStart(6, '0')}`,
     timestamp: new Date().toISOString(),
-    children: [
-      {
-        id: 'd1',
-        label: 'Intent Classification',
-        type: 'decision',
-        confidence: 0.94,
-        timestamp: new Date(Date.now() - 40000).toISOString(),
-        data: { model: 'BERT-large', latency: '23ms' },
-        children: [
-          {
-            id: 'a1',
-            label: 'Route to Code Agent',
-            type: 'action',
-            confidence: 0.94,
-            timestamp: new Date(Date.now() - 35000).toISOString(),
-            children: [
-              {
-                id: 'd2',
-                label: 'Complexity Analysis',
-                type: 'decision',
-                confidence: 0.87,
-                timestamp: new Date(Date.now() - 30000).toISOString(),
-                children: [
-                  {
-                    id: 'a2',
-                    label: 'Decompose Task',
-                    type: 'action',
-                    confidence: 0.87,
-                    timestamp: new Date(Date.now() - 25000).toISOString(),
-                    children: [
-                      {
-                        id: 'o1',
-                        label: '5 Subtasks Created',
-                        type: 'outcome',
-                        confidence: 0.92,
-                        timestamp: new Date(Date.now() - 20000).toISOString(),
-                        children: []
-                      }
-                    ]
-                  },
-                  {
-                    id: 'b1',
-                    label: 'Execute Directly',
-                    type: 'branch',
-                    confidence: 0.13,
-                    timestamp: new Date(Date.now() - 20000).toISOString(),
-                    children: []
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            id: 'b2',
-            label: 'Route to Data Agent',
-            type: 'branch',
-            confidence: 0.06,
-            timestamp: new Date(Date.now() - 30000).toISOString(),
-            children: []
-          }
-        ]
-      },
-      {
-        id: 'd3',
-        label: 'Security Validation',
-        type: 'decision',
-        confidence: 0.98,
-        timestamp: new Date(Date.now() - 38000).toISOString(),
-        data: { scanner: 'AI-Sec-v2', threatsDetected: 0 },
-        children: [
-          {
-            id: 'o2',
-            label: 'Request Approved',
-            type: 'outcome',
-            confidence: 0.98,
-            timestamp: new Date(Date.now() - 33000).toISOString(),
-            children: []
-          }
-        ]
-      }
-    ]
+    actor: actors[Math.floor(Math.random() * actors.length)],
+    action: actions[Math.floor(Math.random() * actions.length)],
+    resource: resources[Math.floor(Math.random() * resources.length)],
+    hash: Array.from({ length: 64 }, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join(''),
+    severity: severities[Math.floor(Math.random() * severities.length)]
   }
 }
 
-const generateAnomalies = (): AnomalyEvent[] => {
+function generateAnomalyAlerts(): AnomalyAlert[] {
   return [
     {
       id: 'anom-001',
       timestamp: new Date(Date.now() - 120000).toISOString(),
-      severity: 'high',
-      type: 'Confidence Drift',
+      type: 'confidence_drift',
       description: 'CodeGenerator agent showing 23% drop in average confidence over last 50 decisions',
-      affectedAgents: ['CodeGenerator'],
-      suggestion: 'Investigate recent model updates or training data quality',
-      status: 'investigating',
+      confidence: 94,
+      baseline: 92,
+      actual: 69,
+      status: 'detected'
     },
     {
       id: 'anom-002',
       timestamp: new Date(Date.now() - 300000).toISOString(),
-      severity: 'medium',
-      type: 'Path Deviation',
+      type: 'pattern_break',
       description: 'TaskPlanner chose non-standard decomposition path for 3 consecutive similar requests',
-      affectedAgents: ['TaskPlanner'],
-      suggestion: 'Review routing rules for this request pattern',
-      status: 'detected',
+      confidence: 87,
+      baseline: 85,
+      actual: 42,
+      status: 'acknowledged'
     },
     {
       id: 'anom-003',
       timestamp: new Date(Date.now() - 600000).toISOString(),
-      severity: 'critical',
-      type: 'Loop Detected',
-      description: 'IntentClassifier entered correction loop (5 iterations) on single request',
-      affectedAgents: ['IntentClassifier', 'Validator'],
-      suggestion: 'Immediate review required - possible infinite loop condition',
-      status: 'investigating',
-    },
-    {
-      id: 'anom-004',
-      timestamp: new Date(Date.now() - 900000).toISOString(),
-      severity: 'low',
-      type: 'Latency Spike',
-      description: 'SecurityScanner response time exceeded 2x normal baseline',
-      affectedAgents: ['SecurityScanner'],
-      suggestion: 'Monitor for resource contention or queue buildup',
-      status: 'resolved',
-    },
-    {
-      id: 'anom-005',
-      timestamp: new Date(Date.now() - 1200000).toISOString(),
-      severity: 'info',
-      type: 'Pattern Shift',
-      description: 'New decision pattern emerging in Validator agent (possible learning adaptation)',
-      affectedAgents: ['Validator'],
-      suggestion: 'Monitor for positive/negative impact on validation accuracy',
-      status: 'detected',
-    },
+      type: 'statistical_outlier',
+      description: 'Response time exceeded 4 standard deviations from mean (z-score: 4.2)',
+      confidence: 99,
+      baseline: 150,
+      actual: 2340,
+      status: 'investigating'
+    }
   ]
 }
 
-const complianceRules: ComplianceRule[] = [
+function generateDecisionEvents(): DecisionEvent[] {
+  return [
+    {
+      id: 'dec-001',
+      timestamp: new Date(Date.now() - 45000).toISOString(),
+      decision: 'Route incoming request to appropriate agent',
+      chosenPath: 'CodeGenerator',
+      confidence: 0.94,
+      alternatives: [
+        { path: 'DataProcessor', probability: 0.04, reason: 'Request contains data transformation patterns but primary intent is code generation' },
+        { path: 'Validator', probability: 0.02, reason: 'Validation not required at this stage - request is new, not a modification' }
+      ],
+      explanation: 'The intent classifier identified strong indicators of code generation intent: presence of technical keywords ("create", "endpoint", "API"), structured format requirements, and absence of data query patterns.'
+    },
+    {
+      id: 'dec-002',
+      timestamp: new Date(Date.now() - 30000).toISOString(),
+      decision: 'Determine task complexity and execution strategy',
+      chosenPath: 'Decompose into subtasks',
+      confidence: 0.87,
+      alternatives: [
+        { path: 'Execute directly', probability: 0.13, reason: 'Direct execution possible but subtask decomposition improves parallelization and error isolation' }
+      ],
+      explanation: 'Complexity analysis scored this task as medium-high complexity due to multiple dependencies (auth, database, validation), suggesting decomposition would improve reliability and enable progress tracking.'
+    }
+  ]
+}
+
+const defaultRoles: Role[] = [
   {
-    id: 'comp-001',
-    name: 'Data Minimization (GDPR Art. 5)',
-    category: 'GDPR',
-    status: 'compliant',
-    lastChecked: new Date().toISOString(),
-    details: 'Only essential data collected during intent classification; PII auto-redacted in logs',
+    name: 'Admin',
+    permissions: {
+      readLogs: true, writeLogs: true, deleteLogs: true,
+      manageUsers: true, viewReports: true, exportData: true,
+      modifyPermissions: true, systemConfig: true
+    }
   },
   {
-    id: 'comp-002',
-    name: 'Right to Explanation (GDPR Art. 22)',
-    category: 'GDPR',
-    status: 'compliant',
-    lastChecked: new Date().toISOString(),
-    details: 'Full reasoning path available for all automated decisions; explanation API active',
+    name: 'Auditor',
+    permissions: {
+      readLogs: true, writeLogs: false, deleteLogs: false,
+      manageUsers: false, viewReports: true, exportData: true,
+      modifyPermissions: false, systemConfig: false
+    }
   },
   {
-    id: 'comp-003',
-    name: 'Access Control (SOC2 CC6)',
-    category: 'SOC2',
-    status: 'compliant',
-    lastChecked: new Date().toISOString(),
-    details: 'Role-based access control enforced; all log access authenticated and audited',
+    name: 'Operator',
+    permissions: {
+      readLogs: true, writeLogs: true, deleteLogs: false,
+      manageUsers: false, viewReports: true, exportData: true,
+      modifyPermissions: false, systemConfig: false
+    }
   },
   {
-    id: 'comp-004',
-    name: 'Encryption at Rest (HIPAA)',
-    category: 'HIPAA',
-    status: 'partial',
-    lastChecked: new Date(Date.now() - 3600000).toISOString(),
-    details: 'Audit logs encrypted; some legacy logs pending migration to AES-256',
-  },
-  {
-    id: 'comp-005',
-    name: 'Audit Trail Integrity (ISO27001 A.12.3)',
-    category: 'ISO27001',
-    status: 'compliant',
-    lastChecked: new Date().toISOString(),
-    details: 'Cryptographic hash chain verified; Merkle root published every 1000 entries',
-  },
-  {
-    id: 'comp-006',
-    name: 'Change Management (SOC2 CM)',
-    category: 'SOC2',
-    status: 'pending',
-    lastChecked: new Date(Date.now() - 7200000).toISOString(),
-    details: 'Next scheduled audit in 24 hours; preliminary checks passed',
-  },
+    name: 'Viewer',
+    permissions: {
+      readLogs: true, writeLogs: false, deleteLogs: false,
+      manageUsers: false, viewReports: true, exportData: false,
+      modifyPermissions: false, systemConfig: false
+    }
+  }
 ]
 
-// ============ SUB-COMPONENTS ============
+const complianceItems: ComplianceItem[] = [
+  // GDPR Article 22
+  { id: 'gdpr-1', framework: 'GDPR', category: 'Article 22', requirement: 'Right to Explanation', description: 'Provide meaningful information about logic involved in automated decision-making', checked: false },
+  { id: 'gdpr-2', framework: 'GDPR', category: 'Article 22', requirement: 'Human Intervention', description: 'Obtain human intervention to express his or her point of view', checked: false },
+  { id: 'gdpr-3', framework: 'GDPR', category: 'Article 22', requirement: 'Contest Decision', description: 'Contest the automated decision', checked: false },
+  { id: 'gdpr-4', framework: 'GDPR', category: 'Article 5', requirement: 'Data Minimization', description: 'Adequate, relevant and limited to what is necessary', checked: false },
+  { id: 'gdpr-5', framework: 'GDPR', category: 'Article 25', requirement: 'Privacy by Design', description: 'Implement appropriate technical measures at design stage', checked: false },
+  // SOC2 CC6
+  { id: 'soc2-1', framework: 'SOC2', category: 'CC6.1', requirement: 'Logical Access', description: 'Implement logical access security measures', checked: false },
+  { id: 'soc2-2', framework: 'SOC2', category: 'CC6.2', requirement: 'User Authentication', description: 'Authenticate users before access granted', checked: false },
+  { id: 'soc2-3', framework: 'SOC2', category: 'CC6.3', requirement: 'Privileged Access', description: 'Restrict privileged access to authorized individuals', checked: false },
+  { id: 'soc2-4', framework: 'SOC2', category: 'CC6.6', requirement: 'Access Review', description: 'Review access rights periodically', checked: false },
+  { id: 'soc2-5', framework: 'SOC2', category: 'CC6.7', requirement: 'Access Revocation', description: 'Modify or revoke access upon termination', checked: false },
+  // HIPAA
+  { id: 'hipaa-1', framework: 'HIPAA', category: '164.312(a)', requirement: 'Access Control', description: 'Implement technical policies for electronic PHI access', checked: false },
+  { id: 'hipaa-2', framework: 'HIPAA', category: '164.312(b)', requirement: 'Audit Controls', description: 'Implement hardware/software mechanisms to examine system activity', checked: false },
+  { id: 'hipaa-3', framework: 'HIPAA', category: '164.312(c)', requirement: 'Integrity Controls', description: 'Protect PHI from improper alteration or destruction', checked: false },
+  { id: 'hipaa-4', framework: 'HIPAA', category: '164.312(e)', requirement: 'Transmission Security', description: 'Protect PHI during transmission', checked: false },
+  // ISO27001
+  { id: 'iso-1', framework: 'ISO27001', category: 'A.12.3', requirement: 'Backup', description: 'Information backup provisions', checked: false },
+  { id: 'iso-2', framework: 'ISO27001', category: 'A.12.4', requirement: 'Logging', description: 'Event logging and monitoring', checked: false },
+  { id: 'iso-3', framework: 'ISO27001', category: 'A.13.1', requirement: 'Network Controls', description: 'Network security management', checked: false },
+  { id: 'iso-4', framework: 'ISO27001', category: 'A.14.1', requirement: 'Secure Development', description: 'Security requirements in systems development', checked: false },
+  { id: 'iso-5', framework: 'ISO27001', category: 'A.15.1', requirement: 'Supplier Relationships', description: 'Information security in supplier relationships', checked: false }
+]
 
-function AuditDashboard({ logs }: { logs: AuditLogEntry[] }) {
-  const stats = useMemo(() => {
-    const totalLogs = logs.length
-    const uniqueAgents = new Set(logs.map(l => l.agentId)).size
-    const avgConfidence = logs.reduce((sum, l) => sum + l.confidence, 0) / totalLogs
-    const decisions = logs.filter(l => l.actionType === 'decision').length
-    const corrections = logs.filter(l => l.actionType === 'correction').length
-    const avgProcessingTime = logs.reduce((sum, l) => 
-      sum + (l.metadata.processingTime as number), 0) / totalLogs
-    
-    return { totalLogs, uniqueAgents, avgConfidence, decisions, corrections, avgProcessingTime }
-  }, [logs])
+// ============ MAIN COMPONENT ============
+
+export default function AuditabilityPage() {
+  const [activeTab, setActiveTab] = useState<string>('crypto')
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  const tabs = [
+    { id: 'crypto', label: '🔐 Crypto Demo', icon: '🔐' },
+    { id: 'livestream', label: '📡 Live Stream', icon: '📡' },
+    { id: 'merkle', label: '🌳 Merkle Tree', icon: '🌳' },
+    { id: 'compliance', label: '📋 Compliance', icon: '📋' },
+    { id: 'decisions', label: '🔀 Decisions', icon: '🔀' },
+    { id: 'anomaly', label: '🚨 Anomaly Detection', icon: '🚨' },
+    { id: 'rbac', label: '🛡️ RBAC Simulator', icon: '🛡️' },
+    { id: 'blockchain', label: '⛓️ Blockchain', icon: '⛓️' },
+    { id: 'subscription', label: '💎 Subscription', icon: '💎' },
+  ]
 
   return (
-    <div className="audit-dashboard">
-      <div className="dashboard-grid">
-        <div className="metric-card metric-primary">
-          <div className="metric-icon">📋</div>
-          <div className="metric-content">
-            <span className="metric-value">{stats.totalLogs.toLocaleString()}</span>
-            <span className="metric-label">Total Log Entries</span>
+    <div className="min-h-screen bg-slate-950 text-white">
+      {/* Header */}
+      <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-xl sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <Link href="/" className="text-sm text-slate-400 hover:text-white transition-colors mb-1 block">← Back to Home</Link>
+              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                Auditability & Traceability
+              </h1>
+              <p className="text-slate-400 text-sm mt-1">AI-Native Architecture • Premium Edition</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-medium border border-emerald-500/30 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                Operational
+              </span>
+            </div>
           </div>
-          <div className="metric-sparkline">
-            {[...Array(20)].map((_, i) => (
-              <div 
-                key={i} 
-                className="spark-bar"
-                style={{ height: `${Math.random() * 100}%` }}
-              />
+        </div>
+      </header>
+
+      {/* Tab Navigation */}
+      <nav className="border-b border-slate-800 bg-slate-900/50 sticky top-[73px] z-40 overflow-x-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex gap-1 py-2 min-w-max">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? 'bg-gradient-to-r from-emerald-600 to-cyan-600 text-white shadow-lg shadow-emerald-500/25'
+                    : 'bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700/50'
+                }`}
+              >
+                {tab.label}
+              </button>
             ))}
           </div>
         </div>
+      </nav>
 
-        <div className="metric-card metric-success">
-          <div className="metric-icon">🤖</div>
-          <div className="metric-content">
-            <span className="metric-value">{stats.uniqueAgents}</span>
-            <span className="metric-label">Active Agents</span>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        {!isClient ? (
+          <div className="flex items-center justify-center h-96">
+            <div className="animate-spin w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full" />
           </div>
-          <div className="metric-indicator">
-            <span className="indicator-dot online" />
-            <span>All Systems Operational</span>
+        ) : (
+          <>
+            {activeTab === 'crypto' && <CryptoDemo />}
+            {activeTab === 'livestream' && <LiveAuditStream />}
+            {activeTab === 'merkle' && <MerkleTreeBuilder />}
+            {activeTab === 'compliance' && <ComplianceReportGenerator />}
+            {activeTab === 'decisions' && <DecisionPathExplorer />}
+            {activeTab === 'anomaly' && <AnomalyDetectionEngine />}
+            {activeTab === 'rbac' && <AccessControlSimulator />}
+            {activeTab === 'blockchain' && <BlockchainExplorer />}
+            {activeTab === 'subscription' && <SubscriptionSection />}
+          </>
+        )}
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-slate-800 mt-auto py-6 bg-slate-900/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-slate-500 text-sm">
+          <p>SciMSPT AI-Native Architecture • Auditability & Traceability Module</p>
+          <p className="mt-1">Powered by Web Crypto API • Real Cryptographic Verification</p>
+        </div>
+      </footer>
+
+      <style jsx global>{`
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        .mono { font-family: 'Fira Code', 'Cascadia Code', monospace; font-size: 0.85rem; }
+        .capitalize { text-transform: capitalize; }
+
+        @keyframes pulse-glow {
+          0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); }
+          50% { box-shadow: 0 0 40px rgba(16, 185, 129, 0.6); }
+        }
+
+        @keyframes slide-in {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes typing {
+          from { width: 0; }
+          to { width: 100%; }
+        }
+
+        .animate-slide-in { animation: slide-in 0.3s ease-out; }
+        .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+      `}</style>
+    </div>
+  )
+}
+
+// ============ COMPONENT 1: REAL CRYPTOGRAPHIC DEMO ============
+
+function CryptoDemo() {
+  const [inputText, setInputText] = useState('Hello, SciMSPT!')
+  const [hashResult, setHashResult] = useState<string>('')
+  const [isComputing, setIsComputing] = useState(false)
+  const [hashChain, setHashChain] = useState<string[]>([])
+  const [chainInput, setChainInput] = useState(['Block 1: Genesis', 'Block 2: Transaction', 'Block 3: Validation'])
+  const [chainVerified, setChainVerified] = useState<boolean | null>(null)
+  const [animationText, setAnimationText] = useState('')
+
+  useEffect(() => {
+    computeHash()
+  }, [])
+
+  const computeHash = async () => {
+    setIsComputing(true)
+    
+    // Animation effect
+    let dots = 0
+    const animInterval = setInterval(() => {
+      setAnimationText('.'.repeat(dots % 4))
+      dots++
+    }, 100)
+    
+    const hash = await computeSHA256(inputText)
+    clearInterval(animInterval)
+    setAnimationText('')
+    setHashResult(hash)
+    setIsComputing(false)
+  }
+
+  const computeHashChain = async () => {
+    setChainVerified(null)
+    const hashes = await computeHashChain(chainInput)
+    setHashChain(hashes)
+  }
+
+  const verifyChainIntegrity = async () => {
+    const recomputed = await computeHashChain(chainInput)
+    const isValid = JSON.stringify(recomputed) === JSON.stringify(hashChain)
+    setChainVerified(isValid)
+  }
+
+  return (
+    <div className="space-y-6 animate-slide-in">
+      <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6">
+        <h2 className="text-xl font-bold text-emerald-400 mb-2 flex items-center gap-2">
+          🔐 Real SHA-256 Hash Computation
+        </h2>
+        <p className="text-slate-400 text-sm mb-6">Using Web Crypto API for real cryptographic hashing</p>
+
+        {/* Single Hash Demo */}
+        <div className="bg-slate-800/50 rounded-xl p-5 space-y-4">
+          <label className="block">
+            <span className="text-sm text-slate-300 mb-2 block">Enter text to hash:</span>
+            <input
+              type="text"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && computeHash()}
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all"
+              placeholder="Type something..."
+            />
+          </label>
+
+          <button
+            onClick={computeHash}
+            disabled={isComputing}
+            className="w-full bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 disabled:opacity-50 text-white font-medium py-3 rounded-lg transition-all flex items-center justify-center gap-2"
+          >
+            {isComputing ? (
+              <>
+                <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                Computing{animationText}
+              </>
+            ) : (
+              <>Compute SHA-256 Hash</>
+            )}
+          </button>
+
+          {hashResult && (
+            <div className="bg-slate-900 rounded-lg p-4 border border-emerald-500/30">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-emerald-400 font-medium">SHA-256 Output (64 hex characters)</span>
+                <button
+                  onClick={() => navigator.clipboard.writeText(hashResult)}
+                  className="text-xs text-slate-400 hover:text-white transition-colors"
+                >
+                  📋 Copy
+                </button>
+              </div>
+              <code className="mono text-emerald-300 break-all text-sm leading-relaxed">{hashResult}</code>
+            </div>
+          )}
+
+          {/* Hash Info */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-slate-900/70 rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold text-cyan-400">{hashResult.length}</div>
+              <div className="text-xs text-slate-400">Characters</div>
+            </div>
+            <div className="bg-slate-900/70 rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold text-purple-400">{hashResult.length / 2}</div>
+              <div className="text-xs text-slate-400">Bytes</div>
+            </div>
+            <div className="bg-slate-900/70 rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold text-amber-400">256</div>
+              <div className="text-xs text-slate-400">Bits</div>
+            </div>
+            <div className="bg-slate-900/70 rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold text-emerald-400">✓</div>
+              <div className="text-xs text-slate-400">Real Crypto</div>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div className="metric-card metric-warning">
-          <div className="metric-icon">🎯</div>
-          <div className="metric-content">
-            <span className="metric-value">{(stats.avgConfidence * 100).toFixed(1)}%</span>
-            <span className="metric-label">Avg Confidence</span>
-          </div>
-          <div className="metric-mini-chart">
-            <svg viewBox="0 0 100 30" className="confidence-svg">
-              <polyline
-                points={Array.from({ length: 20 }, (_, i) => 
-                  `${i * 5},${30 - (Math.random() * 20 + 5)}`
-                ).join(' ')}
-                fill="none"
-                stroke="#f59e0b"
-                strokeWidth="2"
+      {/* Hash Chain Demo */}
+      <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6">
+        <h2 className="text-xl font-bold text-cyan-400 mb-2 flex items-center gap-2">
+          ⛓️ Hash Chain Verification
+        </h2>
+        <p className="text-slate-400 text-sm mb-6">Each block's hash depends on the previous hash - tamper detection!</p>
+
+        <div className="space-y-4">
+          {chainInput.map((item, idx) => (
+            <div key={idx} className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-24 text-right">
+                <span className="text-xs text-slate-500">Block {idx + 1}</span>
+              </div>
+              <input
+                type="text"
+                value={item}
+                onChange={(e) => {
+                  const newChain = [...chainInput]
+                  newChain[idx] = e.target.value
+                  setChainInput(newChain)
+                }}
+                className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:border-cyan-500 outline-none"
               />
-            </svg>
-          </div>
-        </div>
+              {hashChain[idx] && (
+                <div className="flex-shrink-0 max-w-[200px] truncate mono text-xs text-emerald-400 bg-slate-800 px-2 py-2 rounded">
+                  {hashChain[idx].substring(0, 16)}...
+                </div>
+              )}
+            </div>
+          ))}
 
-        <div className="metric-card metric-info">
-          <div className="metric-icon">⚡</div>
-          <div className="metric-content">
-            <span className="metric-value">{Math.round(stats.avgProcessingTime)}ms</span>
-            <span className="metric-label">Avg Processing</span>
+          <div className="flex gap-3 pt-4">
+            <button
+              onClick={() => setChainInput([...chainInput, `Block ${chainInput.length + 1}: New Entry`])}
+              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm transition-colors"
+            >
+              + Add Block
+            </button>
+            <button
+              onClick={computeHashChain}
+              className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-sm font-medium transition-colors"
+            >
+              Compute Chain
+            </button>
+            {hashChain.length > 0 && (
+              <button
+                onClick={verifyChainIntegrity}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-medium transition-colors"
+              >
+                Verify Integrity
+              </button>
+            )}
           </div>
-          <div className="metric-trend trend-down">
-            <span>↓ 12%</span>
-            <span>vs yesterday</span>
-          </div>
-        </div>
 
-        <div className="metric-card metric-danger">
-          <div className="metric-icon">🔀</div>
-          <div className="metric-content">
-            <span className="metric-value">{stats.decisions}</span>
-            <span className="metric-label">Decision Points</span>
-          </div>
-          <div className="metric-breakdown">
-            <span>Corrections: {stats.corrections}</span>
-            <span>{((stats.corrections / stats.decisions) * 100).toFixed(1)}% rate</span>
-          </div>
-        </div>
-
-        <div className="metric-card metric-purple">
-          <div className="metric-icon">🔒</div>
-          <div className="metric-content">
-            <span className="metric-value">100%</span>
-            <span className="metric-label">Log Integrity</span>
-          </div>
-          <div className="metric-verification">
-            <span className="verified-badge">✓ Verified</span>
-            <span>Merkle Root Valid</span>
-          </div>
+          {chainVerified !== null && (
+            <div className={`rounded-lg p-4 ${chainVerified ? 'bg-emerald-500/10 border border-emerald-500/30' : 'bg-red-500/10 border border-red-500/30'}`}>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">{chainVerified ? '✅' : '❌'}</span>
+                <span className={chainVerified ? 'text-emerald-400' : 'text-red-400'}>
+                  {chainVerified ? 'Chain integrity VERIFIED - All hashes are consistent!' : 'Chain BROKEN - Tampering detected!'}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
   )
 }
 
-function DecisionPathVisualizer({ tree }: { tree: DecisionNode }) {
-  const [selectedNode, setSelectedNode] = useState<DecisionNode | null>(null)
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['root']))
+// ============ COMPONENT 2: LIVE AUDIT LOG STREAM ============
 
-  const toggleNode = (nodeId: string) => {
-    setExpandedNodes(prev => {
-      const next = new Set(prev)
-      if (next.has(nodeId)) {
-        next.delete(nodeId)
-      } else {
-        next.add(nodeId)
-      }
-      return next
-    })
+function LiveAuditStream() {
+  const [logs, setLogs] = useState<AuditLogEntry[]>([])
+  const [isStreaming, setIsStreaming] = useState(true)
+  const [filterSeverity, setFilterSeverity] = useState<string>('all')
+  const logCounterRef = useRef(0)
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+
+  useEffect(() => {
+    // Initialize with some logs
+    const initialLogs: AuditLogEntry[] = []
+    for (let i = 0; i < 10; i++) {
+      logCounterRef.current++
+      initialLogs.push(generateLiveLogEntry(logCounterRef.current))
+    }
+    setLogs(initialLogs.reverse())
+
+    // Start streaming
+    startStreaming()
+
+    return () => stopStreaming()
+  }, [])
+
+  const startStreaming = () => {
+    if (intervalRef.current) return
+    
+    intervalRef.current = setInterval(() => {
+      logCounterRef.current++
+      const newEntry = generateLiveLogEntry(logCounterRef.current)
+      
+      setLogs(prev => {
+        const updated = [newEntry, ...prev]
+        // Keep only last 50 entries
+        return updated.slice(0, 50)
+      })
+    }, 3000 + Math.random() * 2000) // Random interval between 3-5 seconds
   }
 
-  const renderNode = (node: DecisionNode, depth: number = 0) => {
-    const isExpanded = expandedNodes.has(node.id)
-    const hasChildren = node.children.length > 0
-    const isSelected = selectedNode?.id === node.id
-
-    const typeColors = {
-      root: '#3b82f6',
-      decision: '#8b5cf6',
-      action: '#10b981',
-      outcome: '#f59e0b',
-      branch: '#64748b',
+  const stopStreaming = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
     }
+  }
 
-    const typeIcons = {
-      root: '🌐',
-      decision: '🔀',
-      action: '⚡',
-      outcome: '✅',
-      branch: '↪️',
+  const toggleStreaming = () => {
+    if (isStreaming) {
+      stopStreaming()
+    } else {
+      startStreaming()
     }
+    setIsStreaming(!isStreaming)
+  }
 
-    return (
-      <div key={node.id} className={`tree-node ${isSelected ? 'selected' : ''}`} style={{ marginLeft: depth * 24 }}>
-        <div 
-          className={`node-content node-${node.type}`}
-          onClick={() => {
-            setSelectedNode(node)
-            if (hasChildren) toggleNode(node.id)
-          }}
-          style={{ borderLeftColor: typeColors[node.type] }}
-        >
-          <div className="node-header">
-            {hasChildren && (
-              <span className={`expand-icon ${isExpanded ? 'expanded' : ''}`}>
-                ▶
-              </span>
-            )}
-            {!hasChildren && <span className="expand-icon placeholder" />}
-            
-            <span className="node-icon">{typeIcons[node.type]}</span>
-            <span className="node-label">{node.label}</span>
-            
-            <div className="node-meta">
-              <span className="confidence-badge" style={{ 
-                background: `${typeColors[node.type]}20`,
-                color: typeColors[node.type]
-              }}>
-                {(node.confidence * 100).toFixed(0)}%
-              </span>
-              <span className="node-type-badge">{node.type}</span>
-            </div>
-          </div>
+  const filteredLogs = filterSeverity === 'all' 
+    ? logs 
+    : logs.filter(l => l.severity === filterSeverity)
 
-          {isSelected && node.data && (
-            <div className="node-data">
-              {Object.entries(node.data).map(([key, value]) => (
-                <div key={key} className="data-row">
-                  <span className="data-key">{key}:</span>
-                  <span className="data-value">{String(value)}</span>
-                </div>
-              ))}
-            </div>
-          )}
+  const exportToCSV = () => {
+    const headers = ['ID', 'Timestamp', 'Actor', 'Action', 'Resource', 'Hash', 'Severity']
+    const rows = filteredLogs.map(l => [l.id, l.timestamp, l.actor, l.action, l.resource, l.hash, l.severity])
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+    
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `audit-log-${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
-          <div className="node-timestamp">
-            {new Date(node.timestamp).toLocaleTimeString()}
+  const exportToJSON = () => {
+    const json = JSON.stringify(filteredLogs, null, 2)
+    const blob = new Blob([json], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `audit-log-${new Date().toISOString().split('T')[0]}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const severityColors = {
+    info: { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/30' },
+    success: { bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500/30' },
+    warning: { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/30' },
+    error: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30' },
+    critical: { bg: 'bg-red-600/20', text: 'text-red-300', border: 'border-red-600/30' }
+  }
+
+  const severityCounts = useMemo(() => ({
+    all: logs.length,
+    info: logs.filter(l => l.severity === 'info').length,
+    success: logs.filter(l => l.severity === 'success').length,
+    warning: logs.filter(l => l.severity === 'warning').length,
+    error: logs.filter(l => l.severity === 'error').length,
+    critical: logs.filter(l => l.severity === 'critical').length,
+  }), [logs])
+
+  return (
+    <div className="space-y-6 animate-slide-in">
+      {/* Stats Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {Object.entries(severityCounts).map(([key, count]) => (
+          <button
+            key={key}
+            onClick={() => setFilterSeverity(key)}
+            className={`p-4 rounded-xl border transition-all ${
+              filterSeverity === key 
+                ? 'bg-slate-700 border-emerald-500 ring-1 ring-emerald-500' 
+                : 'bg-slate-900 border-slate-800 hover:border-slate-700'
+            }`}
+          >
+            <div className="text-2xl font-bold text-white">{count}</div>
+            <div className="text-xs text-slate-400 capitalize">{key}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Controls */}
+      <div className="bg-slate-900 rounded-2xl border border-slate-800 p-4 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggleStreaming}
+            className={`px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2 ${
+              isStreaming 
+                ? 'bg-red-600/20 text-red-400 border border-red-500/30 hover:bg-red-600/30' 
+                : 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/30'
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${isStreaming ? 'bg-red-400 animate-pulse' : 'bg-emerald-400'}`} />
+            {isStreaming ? 'Stop Stream' : 'Start Stream'}
+          </button>
+          
+          <div className="text-sm text-slate-400">
+            Updates every 3-5s • Max 50 entries
           </div>
         </div>
 
-        {hasChildren && isExpanded && (
-          <div className="node-children">
-            {node.children.map(child => renderNode(child, depth + 1))}
+        <div className="flex gap-2">
+          <button
+            onClick={exportToCSV}
+            className="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm transition-colors flex items-center gap-1.5"
+          >
+            📥 CSV
+          </button>
+          <button
+            onClick={exportToJSON}
+            className="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm transition-colors flex items-center gap-1.5"
+          >
+            📥 JSON
+          </button>
+        </div>
+      </div>
+
+      {/* Log Stream */}
+      <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
+        <div className="max-h-[600px] overflow-y-auto">
+          <table className="w-full">
+            <thead className="sticky top-0 bg-slate-800 z-10">
+              <tr className="text-left text-xs text-slate-400 uppercase tracking-wider">
+                <th className="px-4 py-3">Time</th>
+                <th className="px-4 py-3">Actor</th>
+                <th className="px-4 py-3">Action</th>
+                <th className="px-4 py-3">Resource</th>
+                <th className="px-4 py-3">Hash</th>
+                <th className="px-4 py-3">Severity</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800">
+              {filteredLogs.map((log, idx) => {
+                const colors = severityColors[log.severity]
+                return (
+                  <tr 
+                    key={log.id} 
+                    className={`hover:bg-slate-800/50 transition-colors ${idx === 0 ? 'animate-slide-in' : ''}`}
+                  >
+                    <td className="px-4 py-3 mono text-xs text-slate-400 whitespace-nowrap">
+                      {new Date(log.timestamp).toLocaleTimeString()}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-white font-medium">{log.actor}</td>
+                    <td className="px-4 py-3 text-sm text-slate-300">{log.action}</td>
+                    <td className="px-4 py-3 mono text-xs text-cyan-400">{log.resource}</td>
+                    <td className="px-4 py-3 mono text-xs text-emerald-400/70" style={{ maxWidth: '120px' }}>
+                      {log.hash.substring(0, 12)}...
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors.bg} ${colors.text} border ${colors.border}`}>
+                        {log.severity.toUpperCase()}
+                      </span>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+          
+          {filteredLogs.length === 0 && (
+            <div className="text-center py-12 text-slate-500">
+              No log entries match the selected filter
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============ COMPONENT 3: MERKLE TREE BUILDER ============
+
+function MerkleTreeBuilder() {
+  const [entries, setEntries] = useState<string[]>(['Transaction A: $100', 'Transaction B: $250', 'Transaction C: $75', 'Transaction D: $150'])
+  const [newEntry, setNewEntry] = useState('')
+  const [tree, setTree] = useState<MerkleNode | null>(null)
+  const [selectedForProof, setSelectedForProof] = useState<string>('')
+  const [proof, setProof] = useState<string[]>([])
+  const [proofVerified, setProofVerified] = useState<boolean | null>(null)
+  const [isBuilding, setIsBuilding] = useState(false)
+
+  const buildTree = async () => {
+    setIsBuilding(true)
+    const builtTree = await buildMerkleTree(entries.filter(e => e.trim()))
+    setTree(builtTree)
+    setSelectedForProof('')
+    setProof([])
+    setProofVerified(null)
+    setIsBuilding(false)
+  }
+
+  const generateProof = async () => {
+    if (!tree || !selectedForProof) return
+    
+    const merkleProof = await getMerkleProof(tree, selectedForProof)
+    if (merkleProof) {
+      setProof(merkleProof)
+      const isValid = await verifyMerkleProof(selectedForProof, merkleProof, tree.hash)
+      setProofVerified(isValid)
+    } else {
+      setProof([])
+      setProofVerified(null)
+    }
+  }
+
+  const addEntry = () => {
+    if (newEntry.trim()) {
+      setEntries([...entries, newEntry.trim()])
+      setNewEntry('')
+    }
+  }
+
+  const removeEntry = (index: number) => {
+    setEntries(entries.filter((_, i) => i !== index))
+  }
+
+  const renderTreeNode = (node: MerkleNode, depth: number = 0, isLast: boolean = true): React.ReactNode => {
+    if (!node) return null
+    
+    return (
+      <div className="flex items-start gap-2">
+        <div className="flex flex-col items-center">
+          <div className={`w-3 h-3 rounded-full ${node.isLeaf ? 'bg-emerald-500' : 'bg-cyan-500'} mt-2`} />
+          {!isLast && depth > 0 && <div className="w-0.5 h-6 bg-slate-700" />}
+        </div>
+        <div className="pb-4">
+          <div className={`rounded-lg p-3 ${node.isLeaf ? 'bg-emerald-500/10 border border-emerald-500/30' : 'bg-cyan-500/10 border border-cyan-500/30'} min-w-[200px]`}>
+            <div className="mono text-xs text-emerald-400 break-all">{node.hash.substring(0, 32)}...</div>
+            {node.data && <div className="text-xs text-slate-400 mt-1">{node.data}</div>}
           </div>
-        )}
+          {node.left && node.right && (
+            <div className="mt-3 ml-4 flex gap-4">
+              {renderTreeNode(node.left, depth + 1, false)}
+              {renderTreeNode(node.right, depth + 1, true)}
+            </div>
+          )}
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="decision-visualizer">
-      <div className="visualizer-header">
-        <h3>Interactive Decision Tree</h3>
-        <p>Click nodes to inspect details. Expand/collapse branches to trace decision paths.</p>
-      </div>
-      
-      <div className="tree-container">
-        {renderNode(tree)}
+    <div className="space-y-6 animate-slide-in">
+      {/* Entry Management */}
+      <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6">
+        <h2 className="text-xl font-bold text-emerald-400 mb-4">🌳 Merkle Tree Builder</h2>
+        
+        <div className="flex gap-2 mb-4">
+          <input
+            type="text"
+            value={newEntry}
+            onChange={(e) => setNewEntry(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && addEntry()}
+            placeholder="Add transaction/entry..."
+            className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:border-emerald-500 outline-none"
+          />
+          <button
+            onClick={addEntry}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-medium transition-colors"
+          >
+            Add
+          </button>
+          <button
+            onClick={buildTree}
+            disabled={isBuilding || entries.filter(e => e.trim()).length === 0}
+            className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 rounded-lg font-medium transition-colors"
+          >
+            {isBuilding ? 'Building...' : 'Build Tree'}
+          </button>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {entries.map((entry, idx) => (
+            <span
+              key={idx}
+              className="px-3 py-1.5 bg-slate-800 rounded-lg text-sm text-slate-300 flex items-center gap-2 group"
+            >
+              {entry.substring(0, 30)}{entry.length > 30 ? '...' : ''}
+              <button
+                onClick={() => removeEntry(idx)}
+                className="text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                ✕
+              </button>
+            </span>
+          ))}
+        </div>
       </div>
 
-      {selectedNode && (
-        <div className="node-detail-panel">
-          <h4>Node Details</h4>
-          <div className="detail-grid">
-            <div className="detail-item">
-              <span className="detail-label">Node ID</span>
-              <span className="detail-value mono">{selectedNode.id}</span>
+      {/* Tree Visualization & Root Hash */}
+      {tree && (
+        <>
+          <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-white">Merkle Root Hash</h3>
+              <button
+                onClick={() => navigator.clipboard.writeText(tree.hash)}
+                className="text-xs text-slate-400 hover:text-white transition-colors"
+              >
+                📋 Copy
+              </button>
             </div>
-            <div className="detail-item">
-              <span className="detail-label">Type</span>
-              <span className="detail-value capitalize">{selectedNode.type}</span>
-            </div>
-            <div className="detail-item">
-              <span className="detail-label">Confidence</span>
-              <span className="detail-value">
-                <div className="confidence-bar">
-                  <div 
-                    className="confidence-fill"
-                    style={{ width: `${selectedNode.confidence * 100}%` }}
-                  />
-                </div>
-                {(selectedNode.confidence * 100).toFixed(1)}%
-              </span>
-            </div>
-            <div className="detail-item">
-              <span className="detail-label">Timestamp</span>
-              <span className="detail-value">{new Date(selectedNode.timestamp).toLocaleString()}</span>
-            </div>
-            <div className="detail-item full-width">
-              <span className="detail-label">Children</span>
-              <span className="detail-value">{selectedNode.children.length} branches</span>
+            <div className="bg-slate-800 rounded-lg p-4 border border-emerald-500/30">
+              <code className="mono text-emerald-400 text-sm break-all">{tree.hash}</code>
             </div>
           </div>
-        </div>
-      )}
 
-      <div className="legend">
-        <span className="legend-title">Legend:</span>
-        {[
-          { type: 'root' as const, label: 'Entry Point', icon: '🌐' },
-          { type: 'decision' as const, label: 'Decision', icon: '🔀' },
-          { type: 'action' as const, label: 'Action', icon: '⚡' },
-          { type: 'outcome' as const, label: 'Outcome', icon: '✅' },
-          { type: 'branch' as const, label: 'Alternative', icon: '↪️' },
-        ].map(item => (
-          <span key={item.type} className="legend-item">
-            <span className="legend-icon">{item.icon}</span>
-            <span>{item.label}</span>
-          </span>
-        ))}
-      </div>
+          {/* Tree Structure */}
+          <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6">
+            <h3 className="font-semibold text-white mb-4">Tree Structure</h3>
+            <div className="overflow-x-auto pb-4">
+              {renderTreeNode(tree)}
+            </div>
+          </div>
+
+          {/* Proof Generation */}
+          <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6">
+            <h3 className="font-semibold text-white mb-4">🔍 Merkle Proof Generator</h3>
+            
+            <div className="mb-4">
+              <label className="block text-sm text-slate-400 mb-2">Select entry to generate proof:</label>
+              <select
+                value={selectedForProof}
+                onChange={(e) => {
+                  setSelectedForProof(e.target.value)
+                  setProof([])
+                  setProofVerified(null)
+                }}
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:border-emerald-500 outline-none"
+              >
+                <option value="">-- Select an entry --</option>
+                {entries.filter(e => e.trim()).map((entry, idx) => (
+                  <option key={idx} value={entry}>{entry}</option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              onClick={generateProof}
+              disabled={!selectedForProof}
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 rounded-lg font-medium transition-colors mb-4"
+            >
+              Generate Proof
+            </button>
+
+            {proof.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-slate-300">Proof Path ({proof.length} hashes):</h4>
+                {proof.map((hash, idx) => (
+                  <div key={idx} className="bg-slate-800 rounded-lg p-3 flex items-center justify-between">
+                    <span className="text-xs text-slate-400">Step {idx + 1}</span>
+                    <code className="mono text-xs text-purple-400">{hash.substring(0, 32)}...</code>
+                  </div>
+                ))}
+                
+                <div className={`rounded-lg p-4 mt-4 ${proofVerified ? 'bg-emerald-500/10 border border-emerald-500/30' : 'bg-red-500/10 border border-red-500/30'}`}>
+                  <div className="flex items-center gap-2">
+                    <span>{proofVerified ? '✅' : '❌'}</span>
+                    <span className={proofVerified ? 'text-emerald-400' : 'text-red-400'}>
+                      {proofVerified ? 'Proof VERIFIED - Entry exists in tree!' : 'Verification failed'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }
 
-function LogExplorer({ logs }: { logs: AuditLogEntry[] }) {
-  const [filter, setFilter] = useState<{
-    agent?: string
-    actionType?: string
-    searchQuery: string
-    sortBy: 'timestamp' | 'confidence' | 'agent'
-    sortOrder: 'asc' | 'desc'
-  }>({
-    searchQuery: '',
-    sortBy: 'timestamp',
-    sortOrder: 'desc'
-  })
+// ============ COMPONENT 4: COMPLIANCE REPORT GENERATOR ============
 
-  const [selectedLog, setSelectedLog] = useState<AuditLogEntry | null>(null)
-  const [showRawJson, setShowRawJson] = useState(false)
+function ComplianceReportGenerator() {
+  const [items, setItems] = useState<ComplianceItem[]>(complianceItems)
+  const [selectedFramework, setSelectedFramework] = useState<string>('all')
+  const [reportName, setReportName] = useState('')
+  const [showPrintView, setShowPrintView] = useState(false)
 
-  const filteredLogs = useMemo(() => {
-    let result = [...logs]
+  const toggleItem = (id: string) => {
+    setItems(items.map(item => 
+      item.id === id ? { ...item, checked: !item.checked } : item
+    ))
+  }
 
-    if (filter.agent) {
-      result = result.filter(l => l.agentId === filter.agent)
-    }
+  const filteredItems = selectedFramework === 'all' 
+    ? items 
+    : items.filter(item => item.framework === selectedFramework)
 
-    if (filter.actionType) {
-      result = result.filter(l => l.actionType === filter.actionType)
-    }
+  const frameworks = ['all', ...new Set(items.map(i => i.framework))]
 
-    if (filter.searchQuery) {
-      const query = filter.searchQuery.toLowerCase()
-      result = result.filter(l => 
-        l.input.toLowerCase().includes(query) ||
-        l.output.toLowerCase().includes(query) ||
-        l.agentName.toLowerCase().includes(query)
-      )
-    }
+  const stats = useMemo(() => {
+    const total = items.length
+    const checked = items.filter(i => i.checked).length
+    const byFramework = frameworks.slice(1).map(fw => ({
+      name: fw,
+      total: items.filter(i => i.framework === fw).length,
+      checked: items.filter(i => i.framework === fw && i.checked).length
+    }))
+    return { total, checked, percentage: total > 0 ? ((checked / total) * 100).toFixed(1) : '0', byFramework }
+  }, [items, frameworks])
 
-    result.sort((a, b) => {
-      let comparison = 0
-      switch (filter.sortBy) {
-        case 'timestamp':
-          comparison = new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-          break
-        case 'confidence':
-          comparison = a.confidence - b.confidence
-          break
-        case 'agent':
-          comparison = a.agentName.localeCompare(b.agentName)
-          break
-      }
-      return filter.sortOrder === 'desc' ? -comparison : comparison
-    })
+  const generateReport = () => {
+    setShowPrintView(true)
+    setTimeout(() => window.print(), 100)
+  }
 
-    return result
-  }, [logs, filter])
-
-  const uniqueAgents = useMemo(() => 
-    Array.from(new Set(logs.map(l => ({ id: l.agentId, name: l.agentName })))),
-    [logs]
-  )
-
-  const actionTypes: AuditLogEntry['actionType'][] = ['decision', 'reasoning', 'execution', 'correction', 'validation']
-
-  const verifyHashChain = (log: AuditLogEntry): boolean => {
-    // In production, this would use actual crypto verification
-    // For demo, we simulate verification based on hash format
-    return log.hash.length === 64 && log.previousHash.length === 64
+  const frameworkColors: Record<string, string> = {
+    GDPR: 'text-blue-400',
+    SOC2: 'text-purple-400',
+    HIPAA: 'text-red-400',
+    ISO27001: 'text-amber-400'
   }
 
   return (
-    <div className="log-explorer">
-      <div className="explorer-toolbar">
-        <div className="search-box">
-          <span className="search-icon">🔍</span>
-          <input
-            type="text"
-            placeholder="Search logs by content, agent, or action..."
-            value={filter.searchQuery}
-            onChange={(e) => setFilter(prev => ({ ...prev, searchQuery: e.target.value }))}
-            className="search-input"
-          />
+    <div className="space-y-6 animate-slide-in">
+      {/* Overview Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
+          <div className="text-3xl font-bold text-white">{stats.checked}/{stats.total}</div>
+          <div className="text-sm text-slate-400">Requirements Checked</div>
+          <div className="mt-2 h-2 bg-slate-700 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full transition-all duration-500"
+              style={{ width: `${stats.percentage}%` }}
+            />
+          </div>
+        </div>
+        
+        <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
+          <div className="text-3xl font-bold text-emerald-400">{stats.percentage}%</div>
+          <div className="text-sm text-slate-400">Compliance Score</div>
         </div>
 
-        <div className="filter-group">
-          <select 
-            value={filter.agent || ''} 
-            onChange={(e) => setFilter(prev => ({ ...prev, agent: e.target.value || undefined }))}
-            className="filter-select"
-          >
-            <option value="">All Agents</option>
-            {uniqueAgents.map(agent => (
-              <option key={agent.id} value={agent.id}>{agent.name}</option>
-            ))}
-          </select>
-
-          <select 
-            value={filter.actionType || ''} 
-            onChange={(e) => setFilter(prev => ({ ...prev, actionType: (e.target.value || undefined) as AuditLogEntry['actionType'] }))}
-            className="filter-select"
-          >
-            <option value="">All Actions</option>
-            {actionTypes.map(type => (
-              <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
-            ))}
-          </select>
-
-          <select 
-            value={`${filter.sortBy}-${filter.sortOrder}`}
-            onChange={(e) => {
-              const [sortBy, sortOrder] = e.target.value.split('-')
-              setFilter(prev => ({ ...prev, sortBy: sortBy as 'timestamp' | 'confidence' | 'agent', sortOrder: sortOrder as 'asc' | 'desc' }))
-            }}
-            className="filter-select"
-          >
-            <option value="timestamp-desc">Newest First</option>
-            <option value="timestamp-asc">Oldest First</option>
-            <option value="confidence-desc">Highest Confidence</option>
-            <option value="confidence-asc">Lowest Confidence</option>
-            <option value="agent-asc">Agent (A-Z)</option>
-          </select>
+        <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
+          <div className="text-3xl font-bold text-cyan-400">{frameworks.length - 1}</div>
+          <div className="text-sm text-slate-400">Frameworks Covered</div>
         </div>
 
-        <div className="results-count">
-          Showing {filteredLogs.length} of {logs.length} entries
+        <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
+          <div className="text-3xl font-bold text-purple-400">{stats.total - stats.checked}</div>
+          <div className="text-sm text-slate-400">Remaining Items</div>
         </div>
       </div>
 
-      <div className="log-viewer-layout">
-        <div className="log-list">
-          {filteredLogs.map(log => (
-            <div 
-              key={log.id}
-              className={`log-entry ${selectedLog?.id === log.id ? 'selected' : ''}`}
-              onClick={() => setSelectedLog(log)}
+      {/* Framework Filter & Actions */}
+      <div className="bg-slate-900 rounded-2xl border border-slate-800 p-4 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex gap-2 flex-wrap">
+          {frameworks.map(fw => (
+            <button
+              key={fw}
+              onClick={() => setSelectedFramework(fw)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all capitalize ${
+                selectedFramework === fw
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
+              }`}
             >
-              <div className="log-entry-header">
-                <span className={`action-type-badge action-${log.actionType}`}>
-                  {log.actionType}
-                </span>
-                <span className="log-agent">{log.agentName}</span>
-                <span className="log-confidence">
-                  {(log.confidence * 100).toFixed(0)}%
-                </span>
-                <span className="log-time">
-                  {new Date(log.timestamp).toLocaleTimeString()}
-                </span>
-              </div>
-              
-              <div className="log-entry-preview">
-                <span className="preview-input">{log.input.substring(0, 60)}...</span>
-                <span className="preview-arrow">→</span>
-                <span className="preview-output">{log.output.substring(0, 60)}...</span>
-              </div>
+              {fw} {fw !== 'all && stats.byFramework.find(f => f.name === fw) && 
+                `(${stats.byFramework.find(f => f.name === fw!.checked}/${stats.byFramework.find(f => f.name === fw)!.total})`
+              }
+            </button>
+          ))}
+        </div>
 
-              <div className="log-hash-preview">
-                <span className="hash-indicator verified" title="Hash verified">🔐</span>
-                <span className="hash-short">{log.hash.substring(0, 16)}...</span>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={reportName}
+            onChange={(e) => setReportName(e.target.value)}
+            placeholder="Report name..."
+            className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-emerald-500 outline-none"
+          />
+          <button
+            onClick={generateReport}
+            className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 rounded-lg text-sm font-medium transition-all"
+          >
+            🖨️ Generate Report
+          </button>
+        </div>
+      </div>
+
+      {/* Checklist */}
+      <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
+        <div className="divide-y divide-slate-800">
+          {filteredItems.map(item => (
+            <div 
+              key={item.id}
+              className={`p-4 hover:bg-slate-800/50 transition-colors cursor-pointer ${item.checked ? 'bg-emerald-500/5' : ''}`}
+              onClick={() => toggleItem(item.id)}
+            >
+              <div className="flex items-start gap-4">
+                <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
+                  item.checked 
+                    ? 'bg-emerald-500 border-emerald-500 text-white' 
+                    : 'border-slate-600 hover:border-slate-500'
+                }`}>
+                  {item.checked && <span className="text-sm">✓</span>}
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-xs font-medium uppercase ${frameworkColors[item.framework] || 'text-slate-400'}`}>
+                      {item.framework}
+                    </span>
+                    <span className="text-xs text-slate-500">{item.category}</span>
+                  </div>
+                  <h4 className="text-white font-medium mt-1">{item.requirement}</h4>
+                  <p className="text-sm text-slate-400 mt-0.5">{item.description}</p>
+                </div>
               </div>
             </div>
           ))}
         </div>
+      </div>
 
-        {selectedLog && (
-          <div className="log-detail-panel">
-            <div className="panel-header">
-              <h4>Log Entry Details</h4>
-              <button 
-                className="toggle-json-btn"
-                onClick={() => setShowRawJson(!showRawJson)}
-              >
-                {showRawJson ? 'Structured View' : 'View JSON'}
-              </button>
+      {/* Print View (hidden normally) */}
+      {showPrintView && (
+        <div className="fixed inset-0 bg-white text-black z-50 p-8 overflow-auto print:block hidden print:block">
+          <div className="max-w-4xl mx-auto">
+            <h1 className="text-3xl font-bold mb-2">Compliance Report</h1>
+            <p className="text-gray-600 mb-6">Generated on {new Date().toLocaleDateString()}</p>
+            
+            <div className="mb-8 p-4 bg-gray-100 rounded-lg">
+              <h2 className="font-bold text-lg">Executive Summary</h2>
+              <p>Overall Compliance Score: <strong>{stats.percentage}%</strong></p>
+              <p>Requirements Met: <strong>{stats.checked}</strong> of <strong>{stats.total}</strong></p>
             </div>
 
-            {!showRawJson ? (
-              <div className="detail-content">
-                <div className="detail-section">
-                  <h5>Metadata</h5>
-                  <div className="metadata-grid">
-                    <div className="meta-item">
-                      <span className="meta-label">Entry ID</span>
-                      <span className="meta-value mono">{selectedLog.id}</span>
-                    </div>
-                    <div className="meta-item">
-                      <span className="meta-label">Timestamp</span>
-                      <span className="meta-value">{new Date(selectedLog.timestamp).toLocaleString()}</span>
-                    </div>
-                    <div className="meta-item">
-                      <span className="meta-label">Agent</span>
-                      <span className="meta-value">{selectedLog.agentName} ({selectedLog.agentId})</span>
-                    </div>
-                    <div className="meta-item">
-                      <span className="meta-label">Action Type</span>
-                      <span className="meta-value capitalize">{selectedLog.actionType}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="detail-section">
-                  <h5>Input/Output</h5>
-                  <div className="io-container">
-                    <div className="io-block io-input">
-                      <span className="io-label">Input</span>
-                      <pre className="io-content">{selectedLog.input}</pre>
-                    </div>
-                    <div className="io-arrow">→</div>
-                    <div className="io-block io-output">
-                      <span className="io-label">Output</span>
-                      <pre className="io-content">{selectedLog.output}</pre>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="detail-section">
-                  <h5>Reasoning Path</h5>
-                  <div className="reasoning-path">
-                    {selectedLog.reasoningPath.map((step, index) => (
-                      <span key={index} className="path-step">
-                        {index > 0 && <span className="path-separator">→</span>}
-                        <span className="step-name">{step}</span>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="detail-section">
-                  <h5>Cryptographic Proofs</h5>
-                  <div className="crypto-proofs">
-                    <div className="proof-item">
-                      <span className="proof-label">Entry Hash (SHA-256)</span>
-                      <span className="proof-value hash mono">{selectedLog.hash}</span>
-                      <span className={`proof-status ${verifyHashChain(selectedLog) ? 'valid' : 'invalid'}`}>
-                        {verifyHashChain(selectedLog) ? '✓ Valid' : '✗ Invalid'}
-                      </span>
-                    </div>
-                    <div className="proof-item">
-                      <span className="proof-label">Previous Hash</span>
-                      <span className="proof-value hash mono">{selectedLog.previousHash}</span>
-                    </div>
-                    <div className="proof-item">
-                      <span className="proof-label">Nonce</span>
-                      <span className="proof-value mono">{selectedLog.nonce}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="detail-section">
-                  <h5>Extended Metadata</h5>
-                  <div className="extended-metadata">
-                    {Object.entries(selectedLog.metadata).map(([key, value]) => (
-                      <div key={key} className="ext-meta-item">
-                        <span className="ext-meta-key">{key}</span>
-                        <span className="ext-meta-value">{String(value)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+            <h2 className="font-bold text-xl mb-4">Detailed Checklist</h2>
+            {items.filter(i => i.checked).map(item => (
+              <div key={item.id} className="mb-3 p-3 border-l-4 border-green-500 bg-green-50">
+                <strong>[{item.framework}] {item.category}</strong>: {item.requirement}
               </div>
-            ) : (
-              <pre className="raw-json">
-                {JSON.stringify(selectedLog, null, 2)}
-              </pre>
-            )}
+            ))}
+
+            <button 
+              onClick={() => setShowPrintView(false)}
+              className="mt-8 px-4 py-2 bg-gray-200 rounded"
+            >
+              Close Preview
+            </button>
           </div>
-        )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============ COMPONENT 5: DECISION PATH EXPLORER ============
+
+function DecisionPathExplorer() {
+  const decisions = generateDecisionEvents()
+  const [selectedDecision, setSelectedDecision] = useState<DecisionEvent>(decisions[0])
+  const [timelinePosition, setTimelinePosition] = useState<number>(decisions.length - 1)
+  const [showAlternatives, setShowAlternatives] = useState(true)
+
+  const currentDecision = decisions[timelinePosition] || decisions[0]
+
+  return (
+    <div className="space-y-6 animate-slide-in">
+      {/* Timeline Scrubber */}
+      <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6">
+        <h2 className="text-xl font-bold text-purple-400 mb-4">⏱️ Decision Timeline Explorer</h2>
+        
+        <div className="relative">
+          <input
+            type="range"
+            min="0"
+            max={decisions.length - 1}
+            value={timelinePosition}
+            onChange={(e) => setTimelinePosition(parseInt(e.target.value))}
+            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
+          />
+          <div className="flex justify-between mt-2 text-xs text-slate-500">
+            {decisions.map((d, i) => (
+              <button
+                key={d.id}
+                onClick={() => setTimelinePosition(i)}
+                className={`transition-colors ${i === timelinePosition ? 'text-purple-400 font-medium' : 'hover:text-slate-300'}`}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-4 text-center">
+          <span className="text-sm text-slate-400">
+            Viewing decision at: <span className="text-white font-medium">{new Date(currentDecision.timestamp).toLocaleString()}</span>
+          </span>
+        </div>
+      </div>
+
+      {/* Current Decision Card */}
+      <div className="bg-slate-900 rounded-2xl border border-purple-500/30 overflow-hidden">
+        <div className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 p-4 border-b border-slate-800">
+          <h3 className="font-semibold text-lg text-white">{currentDecision.decision}</h3>
+          <p className="text-sm text-slate-400 mt-1">{new Date(currentDecision.timestamp).toLocaleString()}</p>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Chosen Path */}
+          <div>
+            <h4 className="text-sm font-medium text-emerald-400 mb-2 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              Chosen Path
+            </h4>
+            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4">
+              <div className="text-xl font-bold text-emerald-400">{currentDecision.chosenPath}</div>
+              <div className="flex items-center gap-4 mt-3">
+                <div className="text-sm text-slate-400">Confidence:</div>
+                <div className="flex-1 h-3 bg-slate-700 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-emerald-500 to-green-400 rounded-full"
+                    style={{ width: `${currentDecision.confidence * 100}%` }}
+                  />
+                </div>
+                <div className="text-sm font-mono text-emerald-400">{(currentDecision.confidence * 100).toFixed(1)}%</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Explanation */}
+          <div>
+            <h4 className="text-sm font-medium text-cyan-400 mb-2">💡 Why This Decision?</h4>
+            <div className="bg-slate-800/50 rounded-lg p-4 text-slate-300 leading-relaxed">
+              {currentDecision.explanation}
+            </div>
+          </div>
+
+          {/* Alternative Paths */}
+          {showAlternatives && currentDecision.alternatives.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-sm font-medium text-amber-400 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-400" />
+                  Alternative Paths Not Taken
+                </h4>
+                <button
+                  onClick={() => setShowAlternatives(!showAlternatives)}
+                  className="text-xs text-slate-500 hover:text-white transition-colors"
+                >
+                  Hide
+                </button>
+              </div>
+              
+              <div className="space-y-3">
+                {currentDecision.alternatives.map((alt, idx) => (
+                  <div key={idx} className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-amber-400">{alt.path}</span>
+                      <span className="text-xs text-slate-500">{(alt.probability * 100).toFixed(1)}% probability</span>
+                    </div>
+                    <div className="h-2 bg-slate-700 rounded-full overflow-hidden mb-2">
+                      <div 
+                        className="h-full bg-amber-500/50 rounded-full"
+                        style={{ width: `${alt.probability * 100}%` }}
+                      />
+                    </div>
+                    <p className="text-sm text-slate-400 italic">Reason: {alt.reason}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!showAlternatives && (
+            <button
+              onClick={() => setShowAlternatives(true)}
+              className="text-sm text-amber-400 hover:text-amber-300 transition-colors"
+            >
+              Show alternatives →
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* All Decisions List */}
+      <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6">
+        <h3 className="font-semibold text-white mb-4">All Decision Events</h3>
+        <div className="space-y-2">
+          {decisions.map((dec, idx) => (
+            <button
+              key={dec.id}
+              onClick={() => setTimelinePosition(idx)}
+              className={`w-full text-left p-3 rounded-lg transition-all ${
+                idx === timelinePosition 
+                  ? 'bg-purple-500/20 border border-purple-500/30' 
+                  : 'bg-slate-800/50 hover:bg-slate-800 border border-transparent'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-white font-medium">{dec.decision.substring(0, 50)}...</span>
+                <span className="text-xs text-slate-400">{(dec.confidence * 100).toFixed(0)}%</span>
+              </div>
+              <div className="text-xs text-slate-500 mt-1">→ {dec.chosenPath}</div>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )
 }
 
-function AnomalyDetector({ anomalies }: { anomalies: AnomalyEvent[] }) {
-  const [filterSeverity, setFilterSeverity] = useState<string>('all')
-  const [selectedAnomaly, setSelectedAnomaly] = useState<AnomalyEvent | null>(null)
+// ============ COMPONENT 6: ANOMALY DETECTION ENGINE ============
 
-  const filteredAnomalies = useMemo(() => {
-    if (filterSeverity === 'all') return anomalies
-    return anomalies.filter(a => a.severity === filterSeverity)
-  }, [anomalies, filterSeverity])
+function AnomalyDetectionEngine() {
+  const [alerts, setAlerts] = useState<AnomalyAlert[]>(generateAnomalyAlerts())
+  const [baselineValue, setBaselineValue] = useState(150)
+  const [testValue, setTestValue] = useState(250)
+  const [detectionResult, setDetectionResult] = useState<{
+    isAnomaly: boolean
+    zScore: number
+    confidence: number
+    type: string
+  } | null>(null)
 
-  const severityConfig = {
-    critical: { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', icon: '🚨' },
-    high: { color: '#f97316', bg: 'rgba(249, 115, 22, 0.15)', icon: '⚠️' },
-    medium: { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', icon: '📊' },
-    low: { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', icon: 'ℹ️' },
-    info: { color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)', icon: '💡' },
+  const detectAnomaly = () => {
+    const stdDev = baselineValue * 0.15 // Assume 15% standard deviation
+    const zScore = Math.abs(testValue - baselineValue) / stdDev
+    const isAnomaly = zScore > 2
+    const confidence = Math.min(99, Math.round(zScore * 25))
+    
+    let type = 'Normal'
+    if (zScore > 4) type = 'Statistical Outlier'
+    else if (zScore > 3) type = 'Pattern Break'
+    else if (zScore > 2) type = 'Confidence Drift'
+
+    setDetectionResult({ isAnomaly, zScore, confidence, type })
+  }
+
+  const updateAlertStatus = (id: string, status: AnomalyAlert['status']) => {
+    setAlerts(alerts.map(a => a.id === id ? { ...a, status } : a))
+  }
+
+  const typeConfig = {
+    statistical_outlier: { color: '#ef4444', icon: '📊', label: 'Statistical Outlier' },
+    pattern_break: { color: '#f59e0b', icon: '🔄', label: 'Pattern Break' },
+    confidence_drift: { color: '#8b5cf6', icon: '📉', label: 'Confidence Drift' }
   }
 
   const statusConfig = {
-    detected: { label: 'Detected', class: 'status-detected' },
-    investigating: { label: 'Investigating', class: 'status-investigating' },
-    resolved: { label: 'Resolved', class: 'status-resolved' },
-    false_positive: { label: 'False Positive', class: 'status-false-positive' },
+    detected: { color: 'bg-blue-500/20 text-blue-400', label: 'Detected' },
+    acknowledged: { color: 'bg-amber-500/20 text-amber-400', label: 'Acknowledged' },
+    investigating: { color: 'bg-purple-500/20 text-purple-400', label: 'Investigating' },
+    false_positive: { color: 'bg-slate-500/20 text-slate-400', label: 'False Positive' },
+    resolved: { color: 'bg-emerald-500/20 text-emerald-400', label: 'Resolved' }
   }
 
   return (
-    <div className="anomaly-detector">
-      <div className="detector-header">
-        <h3>ML-Powered Anomaly Detection</h3>
-        <p>Real-time detection of unusual patterns in agent decision-making behavior</p>
-      </div>
+    <div className="space-y-6 animate-slide-in">
+      {/* Interactive Detector */}
+      <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6">
+        <h2 className="text-xl font-bold text-red-400 mb-4">🔬 ML-Style Anomaly Detection</h2>
+        <p className="text-slate-400 text-sm mb-6">Simulate Z-score based anomaly detection</p>
 
-      <div className="severity-filters">
-        <button 
-          className={`severity-btn ${filterSeverity === 'all' ? 'active' : ''}`}
-          onClick={() => setFilterSeverity('all')}
-        >
-          All ({anomalies.length})
-        </button>
-        {Object.entries(severityConfig).map(([key, config]) => {
-          const count = anomalies.filter(a => a.severity === key).length
-          if (count === 0) return null
-          return (
-            <button 
-              key={key}
-              className={`severity-btn ${filterSeverity === key ? 'active' : ''}`}
-              style={{ '--severity-color': config.color } as React.CSSProperties}
-              onClick={() => setFilterSeverity(key)}
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm text-slate-400 mb-2">Baseline Value (μ)</label>
+              <input
+                type="number"
+                value={baselineValue}
+                onChange={(e) => setBaselineValue(Number(e.target.value))}
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-red-500 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-slate-400 mb-2">Test Value (x)</label>
+              <input
+                type="number"
+                value={testValue}
+                onChange={(e) => setTestValue(Number(e.target.value))}
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-red-500 outline-none"
+              />
+            </div>
+            <button
+              onClick={detectAnomaly}
+              className="w-full bg-red-600 hover:bg-red-500 rounded-lg py-3 font-medium transition-colors"
             >
-              {config.icon} {key.charAt(0).toUpperCase() + key.slice(1)} ({count})
+              Run Detection
             </button>
-          )
-        })}
+          </div>
+
+          {detectionResult && (
+            <div className={`rounded-xl p-6 border ${
+              detectionResult.isAnomaly 
+                ? 'bg-red-500/10 border-red-500/30' 
+                : 'bg-emerald-500/10 border-emerald-500/30'
+            }`}>
+              <div className="text-center">
+                <div className="text-5xl mb-3">{detectionResult.isAnomaly ? '🚨' : '✅'}</div>
+                <div className={`text-2xl font-bold ${detectionResult.isAnomaly ? 'text-red-400' : 'text-emerald-400'}`}>
+                  {detectionResult.type}
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 mt-6 text-left">
+                  <div className="bg-slate-800/50 rounded-lg p-3">
+                    <div className="text-xs text-slate-500">Z-Score</div>
+                    <div className="text-lg font-bold text-white">{detectionResult.zScore.toFixed(2)}</div>
+                  </div>
+                  <div className="bg-slate-800/50 rounded-lg p-3">
+                    <div className="text-xs text-slate-500">Confidence</div>
+                    <div className="text-lg font-bold text-white">{detectionResult.confidence}%</div>
+                  </div>
+                </div>
+
+                <div className="mt-4 h-3 bg-slate-700 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all ${detectionResult.isAnomaly ? 'bg-red-500' : 'bg-emerald-500'}`}
+                    style={{ width: `${detectionResult.confidence}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="anomaly-grid">
-        {filteredAnomalies.map(anomaly => {
-          const config = severityConfig[anomaly.severity]
-          const status = statusConfig[anomaly.status]
-
-          return (
-            <div 
-              key={anomaly.id}
-              className={`anomaly-card ${selectedAnomaly?.id === anomaly.id ? 'selected' : ''}`}
-              style={{ borderColor: config.color }}
-              onClick={() => setSelectedAnomaly(anomaly)}
-            >
-              <div className="anomaly-header" style={{ background: config.bg }}>
-                <span className="anomaly-icon">{config.icon}</span>
-                <span className="anomaly-type">{anomaly.type}</span>
-                <span className={`anomaly-status ${status.class}`}>{status.label}</span>
-              </div>
-
-              <div className="anomaly-body">
-                <p className="anomaly-description">{anomaly.description}</p>
-                
-                <div className="anomaly-meta">
-                  <div className="meta-row">
-                    <span className="meta-label">Affected Agents:</span>
-                    <div className="agent-tags">
-                      {anomaly.affectedAgents.map(agent => (
-                        <span key={agent} className="agent-tag">{agent}</span>
-                      ))}
+      {/* Active Alerts */}
+      <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6">
+        <h3 className="font-semibold text-white mb-4">Active Alerts</h3>
+        
+        <div className="space-y-4">
+          {alerts.map(alert => {
+            const config = typeConfig[alert.type]
+            const status = statusConfig[alert.status]
+            
+            return (
+              <div 
+                key={alert.id}
+                className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden"
+              >
+                <div className="p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">{config.icon}</span>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-white">{config.label}</span>
+                          <span className={`px-2 py-0.5 rounded text-xs ${status.color}`}>{status.label}</span>
+                        </div>
+                        <p className="text-sm text-slate-400 mt-1">{alert.description}</p>
+                        
+                        <div className="flex gap-6 mt-3 text-xs">
+                          <div>
+                            <span className="text-slate-500">Baseline: </span>
+                            <span className="text-slate-300">{alert.baseline}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-500">Actual: </span>
+                            <span className="text-red-400">{alert.actual}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-500">Confidence: </span>
+                            <span className="text-amber-400">{alert.confidence}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-xs text-slate-500 whitespace-nowrap">
+                      {new Date(alert.timestamp).toLocaleTimeString()}
                     </div>
                   </div>
                   
-                  <div className="meta-row">
-                    <span className="meta-label">Time:</span>
-                    <span className="meta-value">
-                      {new Date(anomaly.timestamp).toLocaleString()}
-                    </span>
-                  </div>
-
-                  <div className="meta-row suggestion">
-                    <span className="meta-label">Suggestion:</span>
-                    <span className="meta-value suggestion-text">{anomaly.suggestion}</span>
-                  </div>
+                  {/* Resolution Actions */}
+                  {alert.status !== 'resolved' && alert.status !== 'false_positive' && (
+                    <div className="flex gap-2 mt-4 pt-4 border-t border-slate-700">
+                      <button
+                        onClick={() => updateAlertStatus(alert.id, 'acknowledged')}
+                        className="px-3 py-1.5 bg-amber-600/20 text-amber-400 hover:bg-amber-600/30 rounded text-xs font-medium transition-colors"
+                      >
+                        Acknowledge
+                      </button>
+                      <button
+                        onClick={() => updateAlertStatus(alert.id, 'investigating')}
+                        className="px-3 py-1.5 bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 rounded text-xs font-medium transition-colors"
+                      >
+                        Investigate
+                      </button>
+                      <button
+                        onClick={() => updateAlertStatus(alert.id, 'false_positive')}
+                        className="px-3 py-1.5 bg-slate-600/20 text-slate-400 hover:bg-slate-600/30 rounded text-xs font-medium transition-colors"
+                      >
+                        False Positive
+                      </button>
+                      <button
+                        onClick={() => updateAlertStatus(alert.id, 'resolved')}
+                        className="px-3 py-1.5 bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 rounded text-xs font-medium transition-colors"
+                      >
+                        Resolve
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {selectedAnomaly && (
-        <div className="anomaly-detail-modal">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h4>Anomaly Investigation</h4>
-              <button onClick={() => setSelectedAnomaly(null)}>✕</button>
-            </div>
-            <div className="modal-body">
-              <div className="detail-row">
-                <span className="detail-label">ID</span>
-                <span className="detail-value mono">{selectedAnomaly.id}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Severity</span>
-                <span className="detail-value" style={{ color: severityConfig[selectedAnomaly.severity].color }}>
-                  {selectedAnomaly.severity.toUpperCase()}
-                </span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Type</span>
-                <span className="detail-value">{selectedAnomaly.type}</span>
-              </div>
-              <div className="detail-row full">
-                <span className="detail-label">Description</span>
-                <span className="detail-value">{selectedAnomaly.description}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Status</span>
-                <span className={`detail-value ${statusConfig[selectedAnomaly.status].class}`}>
-                  {statusConfig[selectedAnomaly.status].label}
-                </span>
-              </div>
-              <div className="detail-actions">
-                <button className="btn btn-primary btn-sm">Start Investigation</button>
-                <button className="btn btn-outline btn-sm">Mark Resolved</button>
-                <button className="btn btn-outline btn-sm">False Positive</button>
-                <button className="btn btn-outline btn-sm">Export Report</button>
-              </div>
-            </div>
-          </div>
+            )
+          })}
         </div>
-      )}
-    </div>
-  )
-}
-
-function CompliancePanel({ rules }: { rules: ComplianceRule[] }) {
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
-
-  const categories = ['all', ...Array.from(new Set(rules.map(r => r.category)))]
-  
-  const filteredRules = useMemo(() => {
-    if (selectedCategory === 'all') return rules
-    return rules.filter(r => r.category === selectedCategory)
-  }, [rules, selectedCategory])
-
-  const statusStats = useMemo(() => ({
-    compliant: rules.filter(r => r.status === 'compliant').length,
-    partial: rules.filter(r => r.status === 'partial').length,
-    non_compliant: rules.filter(r => r.status === 'non_compliant').length,
-    pending: rules.filter(r => r.status === 'pending').length,
-  }), [rules])
-
-  const statusConfig = {
-    compliant: { color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', icon: '✓' },
-    partial: { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', icon: '~' },
-    non_compliant: { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', icon: '✗' },
-    pending: { color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)', icon: '○' },
-  }
-
-  return (
-    <div className="compliance-panel">
-      <div className="panel-header">
-        <h3>Compliance & Governance</h3>
-        <p>Regulatory compliance monitoring and audit trail governance</p>
-      </div>
-
-      <div className="compliance-overview">
-        <div className="overview-stat compliant">
-          <span className="stat-number">{statusStats.compliant}</span>
-          <span className="stat-label">Compliant</span>
-        </div>
-        <div className="overview-stat partial">
-          <span className="stat-number">{statusStats.partial}</span>
-          <span className="stat-label">Partial</span>
-        </div>
-        <div className="overview-stat pending">
-          <span className="stat-number">{statusStats.pending}</span>
-          <span className="stat-label">Pending</span>
-        </div>
-        <div className="overview-stat non_compliant">
-          <span className="stat-number">{statusStats.non_compliant}</span>
-          <span className="stat-label">Non-Compliant</span>
-        </div>
-      </div>
-
-      <div className="category-tabs">
-        {categories.map(cat => (
-          <button
-            key={cat}
-            className={`category-tab ${selectedCategory === cat ? 'active' : ''}`}
-            onClick={() => setSelectedCategory(cat)}
-          >
-            {cat === 'all' ? 'All Rules' : cat}
-          </button>
-        ))}
-      </div>
-
-      <div className="rules-list">
-        {filteredRules.map(rule => {
-          const config = statusConfig[rule.status]
-          
-          return (
-            <div key={rule.id} className="rule-card">
-              <div className="rule-header">
-                <span className="rule-status" style={{ 
-                  background: config.bg, 
-                  color: config.color 
-                }}>
-                  {config.icon} {rule.status.replace('_', ' ').toUpperCase()}
-                </span>
-                <span className="rule-category">{rule.category}</span>
-              </div>
-              
-              <h4 className="rule-name">{rule.name}</h4>
-              <p className="rule-details">{rule.details}</p>
-              
-              <div className="rule-footer">
-                <span className="last-checked">
-                  Last checked: {new Date(rule.lastChecked).toLocaleString()}
-                </span>
-                <button className="btn btn-outline btn-sm">Re-run Check</button>
-              </div>
-            </div>
-          )
-        })}
       </div>
     </div>
   )
 }
 
-function TimelineVisualization({ logs }: { logs: AuditLogEntry[] }) {
-  const [selectedEntry, setSelectedEntry] = useState<AuditLogEntry | null>(null)
+// ============ COMPONENT 7: ACCESS CONTROL SIMULATOR ============
 
-  const timelineLogs = useMemo(() => 
-    [...logs].sort((a, b) => 
-      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    ).slice(0, 30),
-    [logs]
-  )
+function AccessControlSimulator() {
+  const [roles, setRoles] = useState<Role[]>(defaultRoles)
+  const [selectedRole, setSelectedRole] = useState<string>('Auditor')
+  const [testAction, setTestAction] = useState<keyof Role['permissions']>('deleteLogs')
+  const [testResult, setTestResult] = useState<{ allowed: boolean; message: string } | null>(null)
+  const [permissionHistory, setPermissionHistory] = useState<PermissionChange[]>([])
 
-  const getActionIcon = (type: AuditLogEntry['actionType']) => {
-    const icons = {
-      decision: '🔀',
-      reasoning: '🧠',
-      execution: '⚡',
-      correction: '🔧',
-      validation: '✅',
-    }
-    return icons[type]
+  const permissionLabels: Record<keyof Role['permissions'], string> = {
+    readLogs: 'Read Audit Logs',
+    writeLogs: 'Write Audit Logs',
+    deleteLogs: 'Delete Audit Logs',
+    manageUsers: 'Manage Users',
+    viewReports: 'View Reports',
+    exportData: 'Export Data',
+    modifyPermissions: 'Modify Permissions',
+    systemConfig: 'System Configuration'
   }
 
-  return (
-    <div className="timeline-visualization">
-      <div className="timeline-header">
-        <h3>Action Timeline</h3>
-        <p>Chronological view of agent activities and decision points</p>
-      </div>
+  const testAccess = () => {
+    const role = roles.find(r => r.name === selectedRole)
+    if (!role) return
+    
+    const hasPermission = role.permissions[testAction]
+    setTestResult({
+      allowed: hasPermission,
+      message: hasPermission 
+        ? `✅ ${selectedRole} CAN "${permissionLabels[testAction]}"`
+        : `❌ ${selectedRole} CANNOT "${permissionLabels[testAction]}" - Permission denied`
+    })
 
-      <div className="timeline-container">
-        <div className="timeline-line" />
+    // Log the test
+    setPermissionHistory(prev => [{
+      timestamp: new Date().toISOString(),
+      role: selectedRole,
+      permission: permissionLabels[testAction],
+      oldValue: !hasPermission,
+      newValue: hasPermission ? 'Allowed' : 'Denied',
+      changedBy: 'Current User'
+    }, ...prev].slice(0, 20))
+  }
+
+  const togglePermission = (roleName: string, permission: keyof Role['permissions']) => {
+    setRoles(roles.map(role => {
+      if (role.name !== roleName) return role
+      
+      const oldValue = role.permissions[permission]
+      const newValue = !oldValue
+      
+      setPermissionHistory(prev => [{
+        timestamp: new Date().toISOString(),
+        role: roleName,
+        permission: permissionLabels[permission],
+        oldValue,
+        newValue: newValue ? 'Granted' : 'Revoked',
+        changedBy: 'Current User'
+      }, ...prev].slice(0, 20))
+      
+      return {
+        ...role,
+        permissions: { ...role.permissions, [permission]: newValue }
+      }
+    }))
+  }
+
+  const currentRole = roles.find(r => r.name === selectedRole)
+
+  return (
+    <div className="space-y-6 animate-slide-in">
+      {/* Access Test Panel */}
+      <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6">
+        <h2 className="text-xl font-bold text-amber-400 mb-4">🛡️ RBAC Permission Simulator</h2>
         
-        {timelineLogs.map((log, index) => (
-          <div 
-            key={log.id}
-            className={`timeline-entry ${selectedEntry?.id === log.id ? 'selected' : ''}`}
-            onClick={() => setSelectedEntry(log)}
-          >
-            <div className="timeline-dot" data-action={log.actionType}>
-              <span className="dot-icon">{getActionIcon(log.actionType)}</span>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm text-slate-400 mb-2">Select Role</label>
+              <select
+                value={selectedRole}
+                onChange={(e) => { setSelectedRole(e.target.value); setTestResult(null) }}
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-amber-500 outline-none"
+              >
+                {roles.map(role => (
+                  <option key={role.name} value={role.name}>{role.name}</option>
+                ))}
+              </select>
             </div>
             
-            <div className="timeline-content">
-              <div className="timeline-main">
-                <span className="timeline-agent">{log.agentName}</span>
-                <span className="timeline-action">{log.actionType}</span>
-                <span className="timeline-time">
-                  {formatTimeAgo(log.timestamp)}
-                </span>
-              </div>
-              
-              <p className="timeline-preview">
-                {log.output.substring(0, 80)}...
-              </p>
-              
-              <div className="timeline-confidence">
-                <div className="mini-bar">
-                  <div 
-                    className="mini-fill"
-                    style={{ 
-                      width: `${log.confidence * 100}%`,
-                      background: log.confidence > 0.85 ? '#10b981' : 
-                                 log.confidence > 0.7 ? '#f59e0b' : '#ef4444'
-                    }}
-                  />
+            <div>
+              <label className="block text-sm text-slate-400 mb-2">Action to Test</label>
+              <select
+                value={testAction}
+                onChange={(e) => setTestAction(e.target.value as keyof Role['permissions'])}
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-amber-500 outline-none"
+              >
+                {Object.entries(permissionLabels).map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+            </div>
+            
+            <button
+              onClick={testAccess}
+              className="w-full bg-amber-600 hover:bg-amber-500 rounded-lg py-3 font-medium transition-colors"
+            >
+              Test Access
+            </button>
+          </div>
+
+          {testResult && (
+            <div className={`rounded-xl p-6 border flex items-center justify-center ${
+              testResult.allowed 
+                ? 'bg-emerald-500/10 border-emerald-500/30' 
+                : 'bg-red-500/10 border-red-500/30'
+            }`}>
+              <div className="text-center">
+                <div className="text-4xl mb-3">{testResult.allowed ? '✅' : '🚫'}</div>
+                <div className={`text-lg font-bold ${testResult.allowed ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {testResult.allowed ? 'ACCESS GRANTED' : 'ACCESS DENIED'}
                 </div>
-                <span>{(log.confidence * 100).toFixed(0)}%</span>
+                <p className="text-sm text-slate-400 mt-2">{testResult.message}</p>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-
-      {selectedEntry && (
-        <div className="timeline-detail-popover">
-          <div className="popover-header">
-            <strong>Timeline Entry Detail</strong>
-            <button onClick={() => setSelectedEntry(null)}>✕</button>
-          </div>
-          <div className="popover-body">
-            <p><strong>Agent:</strong> {selectedEntry.agentName}</p>
-            <p><strong>Action:</strong> {selectedEntry.actionType}</p>
-            <p><strong>Time:</strong> {new Date(selectedEntry.timestamp).toLocaleString()}</p>
-            <p><strong>Input:</strong> {selectedEntry.input}</p>
-            <p><strong>Output:</strong> {selectedEntry.output}</p>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function CryptographicProofPanel({ logs }: { logs: AuditLogEntry[] }) {
-  const [verifying, setVerifying] = useState(false)
-  const [verificationResult, setVerificationResult] = useState<'valid' | 'invalid' | null>(null)
-
-  const merkleRoot = useMemo(() => {
-    // Simulate Merkle root computation
-    const combined = logs.map(l => l.hash).join('')
-    let hash = 0
-    for (let i = 0; i < combined.length; i++) {
-      const char = combined.charCodeAt(i)
-      hash = ((hash << 5) - hash) + char
-      hash = hash & hash
-    }
-    return Math.abs(hash).toString(16).padStart(64, '0')
-  }, [logs])
-
-  const handleVerify = async () => {
-    setVerifying(true)
-    // Simulate async verification
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    setVerificationResult('valid')
-    setVerifying(false)
-  }
-
-  const chainLength = logs.length
-  const latestHash = logs[0]?.hash || 'N/A'
-
-  return (
-    <div className="crypto-proof-panel">
-      <div className="panel-header">
-        <h3>Cryptographic Verification</h3>
-        <p>Immutable audit trail backed by hash chains and Merkle trees</p>
-      </div>
-
-      <div className="crypto-metrics">
-        <div className="crypto-metric">
-          <span className="metric-label">Chain Length</span>
-          <span className="metric-value mono">{chainLength.toLocaleString()} entries</span>
-        </div>
-        <div className="crypto-metric">
-          <span className="metric-label">Latest Hash</span>
-          <span className="metric-value hash mono">{latestHash.substring(0, 32)}...</span>
-        </div>
-        <div className="crypto-metric">
-          <span className="metric-label">Merkle Root</span>
-          <span className="metric-value hash mono">{merkleRoot.substring(0, 32)}...</span>
-        </div>
-      </div>
-
-      <div className="verification-section">
-        <button 
-          className={`btn btn-primary ${verifying ? 'verifying' : ''}`}
-          onClick={handleVerify}
-          disabled={verifying}
-        >
-          {verifying ? (
-            <>
-              <span className="spinner" /> Verifying Chain...
-            </>
-          ) : (
-            'Verify Hash Chain Integrity'
           )}
-        </button>
-
-        {verificationResult && (
-          <div className={`verification-result ${verificationResult}`}>
-            {verificationResult === 'valid' ? (
-              <>
-                <span className="result-icon">✓</span>
-                <div className="result-details">
-                  <strong>Chain Verified Successfully</strong>
-                  <p>All {chainLength} entries have valid cryptographic proofs. The audit trail is immutable and tamper-evident.</p>
-                </div>
-              </>
-            ) : (
-              <>
-                <span className="result-icon">✗</span>
-                <div className="result-details">
-                  <strong>Verification Failed</strong>
-                  <p>Tampering detected in the hash chain. Immediate investigation required.</p>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className="hash-chain-viz">
-        <h4>Hash Chain Visualization</h4>
-        <div className="chain-display">
-          {logs.slice(0, 8).map((log, index) => (
-            <div key={log.id} className="chain-link">
-              <div className="chain-node">
-                <span className="node-index">#{logs.length - index}</span>
-                <span className="node-hash">{log.hash.substring(0, 12)}...</span>
-              </div>
-              {index < 7 && (
-                <div className="chain-connector">
-                  <span className="connector-arrow">↓</span>
-                  <span className="connector-label">prev</span>
-                </div>
-              )}
-            </div>
-          ))}
-          <div className="chain-ellipsis">...{chainLength - 8} more entries</div>
         </div>
       </div>
-    </div>
-  )
-}
 
-function AccessControlMatrix() {
-  const roles = [
-    { id: 'admin', name: 'Administrator', users: 3 },
-    { id: 'auditor', name: 'Auditor', users: 8 },
-    { id: 'analyst', name: 'Analyst', users: 24 },
-    { id: 'viewer', name: 'Viewer', users: 156 },
-  ]
-
-  const permissions = [
-    { id: 'view_logs', name: 'View Logs', category: 'Read' },
-    { id: 'export_logs', name: 'Export Logs', category: 'Export' },
-    { id: 'verify_integrity', name: 'Verify Integrity', category: 'Verify' },
-    { id: 'manage_access', name: 'Manage Access', category: 'Admin' },
-    { id: 'delete_logs', name: 'Delete Logs (Retention)', category: 'Admin' },
-    { id: 'configure_rules', name: 'Configure Rules', category: 'Admin' },
-    { id: 'investigate_anomalies', name: 'Investigate Anomalies', category: 'Analysis' },
-    { id: 'sign_off_reports', name: 'Sign Off Reports', category: 'Approve' },
-  ]
-
-  const permissionMatrix: Record<string, string[]> = {
-    admin: permissions.map(p => p.id),
-    auditor: ['view_logs', 'export_logs', 'verify_integrity', 'investigate_anomalies', 'sign_off_reports'],
-    analyst: ['view_logs', 'export_logs', 'verify_integrity', 'investigate_anomalies'],
-    viewer: ['view_logs'],
-  }
-
-  const hasPermission = (roleId: string, permissionId: string): boolean => {
-    return permissionMatrix[roleId]?.includes(permissionId) || false
-  }
-
-  return (
-    <div className="access-control-matrix">
-      <div className="matrix-header">
-        <h3>Access Control Matrix</h3>
-        <p>Role-based permission management for audit trail access</p>
-      </div>
-
-      <div className="role-stats">
-        {roles.map(role => (
-          <div key={role.id} className="role-stat">
-            <span className="role-name">{role.name}</span>
-            <span className="role-count">{role.users} users</span>
-          </div>
-        ))}
-      </div>
-
-      <div className="matrix-table-container">
-        <table className="matrix-table">
+      {/* Permission Matrix */}
+      <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6 overflow-x-auto">
+        <h3 className="font-semibold text-white mb-4">Permission Matrix Editor</h3>
+        
+        <table className="w-full min-w-[600px]">
           <thead>
-            <tr>
-              <th className="permission-col">Permission</th>
-              {roles.map(role => (
-                <th key={role.id} className="role-col">{role.name}</th>
+            <tr className="border-b border-slate-700">
+              <th className="text-left py-3 px-4 text-sm text-slate-400 font-medium">Role</th>
+              {(Object.keys(permissionLabels) as Array<keyof Role['permissions']>).map(key => (
+                <th key={key} className="text-center py-3 px-2 text-xs text-slate-500 font-medium">
+                  {permissionLabels[key]}
+                </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {permissions.map(permission => (
-              <tr key={permission.id}>
-                <td className="permission-cell">
-                  <span className="perm-category">{permission.category}</span>
-                  <span className="perm-name">{permission.name}</span>
-                </td>
-                {roles.map(role => (
-                  <td key={role.id} className="access-cell">
-                    <span className={`access-icon ${hasPermission(role.id, permission.id) ? 'granted' : 'denied'}`}>
-                      {hasPermission(role.id, permission.id) ? '✓' : '✗'}
-                    </span>
+            {roles.map(role => (
+              <tr key={role.name} className={`border-b border-slate-800 ${role.name === selectedRole ? 'bg-amber-500/5' : ''}`}>
+                <td className="py-3 px-4 font-medium text-white">{role.name}</td>
+                {(Object.keys(permissionLabels) as Array<keyof Role['permissions']>).map(key => (
+                  <td key={key} className="py-3 px-2 text-center">
+                    <button
+                      onClick={() => togglePermission(role.name, key)}
+                      className={`w-8 h-8 rounded-lg transition-all ${
+                        role.permissions[key]
+                          ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                          : 'bg-slate-700/50 text-slate-500 hover:bg-slate-700'
+                      }`}
+                    >
+                      {role.permissions[key] ? '✓' : '✕'}
+                    </button>
                   </td>
                 ))}
               </tr>
@@ -1403,2117 +1820,377 @@ function AccessControlMatrix() {
         </table>
       </div>
 
-      <div className="matrix-legend">
-        <span className="legend-item">
-          <span className="access-icon granted">✓</span> Granted
-        </span>
-        <span className="legend-item">
-          <span className="access-icon denied">✗</span> Denied
-        </span>
+      {/* Permission Change History */}
+      <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6">
+        <h3 className="font-semibold text-white mb-4">📜 Permission Change Audit Trail</h3>
+        
+        <div className="space-y-2 max-h-[300px] overflow-y-auto">
+          {permissionHistory.map((change, idx) => (
+            <div key={idx} className="flex items-center gap-4 p-3 bg-slate-800/50 rounded-lg text-sm">
+              <span className="text-slate-500 mono text-xs whitespace-nowrap">
+                {new Date(change.timestamp).toLocaleTimeString()}
+              </span>
+              <span className="font-medium text-white">{change.role}</span>
+              <span className="text-slate-400">{change.permission}</span>
+              <span className={`${change.newValue === 'Granted' || change.newValue === 'Allowed' ? 'text-emerald-400' : 'text-red-400'}`}>
+                {change.oldValue ? '✕' : '✓'} → {change.newValue === 'Granted' || change.newValue === 'Allowed' ? '✓' : '✕'}
+              </span>
+              <span className="text-slate-500 text-xs ml-auto">by {change.changedBy}</span>
+            </div>
+          ))}
+          
+          {permissionHistory.length === 0 && (
+            <div className="text-center text-slate-500 py-8">
+              No permission changes yet. Use the matrix above or run access tests.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
 }
 
-// ============ UTILITY FUNCTIONS ============
+// ============ COMPONENT 8: BLOCKCHAIN EXPLORER ============
 
-function formatTimeAgo(timestamp: string): string {
-  const seconds = Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000)
-  
-  if (seconds < 60) return `${seconds}s ago`
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
-  return `${Math.floor(seconds / 86400)}d ago`
-}
+function BlockchainExplorer() {
+  const [blocks, setBlocks] = useState<Block[]>([
+    {
+      index: 0,
+      timestamp: new Date(Date.now() - 60000).toISOString(),
+      hash: '',
+      previousHash: '0'.repeat(64),
+      nonce: 0,
+      data: 'Genesis Block - SciMSPT Audit Chain Initialized'
+    }
+  ])
+  const [newBlockData, setNewBlockData] = useState('')
+  const [isMining, setIsMining] = useState(false)
+  const [validationResult, setValidationResult] = useState<{ valid: boolean; message: string } | null>(null)
+  const [tamperedIndex, setTamperedIndex] = useState<number | null>(null)
+  const [tamperValue, setTamperValue] = useState('')
 
-// ============ MAIN PAGE COMPONENT ============
+  useEffect(() => {
+    initializeGenesis()
+  }, [])
 
-const relatedPillars = [
-  { id: 'maol', name: 'MAOL', href: '/maol', icon: '🧠' },
-  { id: 'emergent-behavior', name: 'Emergent Behavior', href: '/emergent-behavior', icon: '🔄' },
-  { id: 'intelligence-graph', name: 'Intelligence Graph', href: '/intelligence-graph', icon: '🕸️' },
-]
+  const initializeGenesis = async () => {
+    const genesisHash = await computeSHA256(`${blocks[0].index}${blocks[0].previousHash}${blocks[0].data}${blocks[0].nonce}`)
+    setBlocks([{ ...blocks[0], hash: genesisHash }])
+  }
 
-export default function AuditabilityPage() {
-  const [activeTab, setActiveTab] = useState<string>('dashboard')
-  const [logs] = useState<AuditLogEntry[]>(() => generateAuditLogs(100))
-  const [decisionTree] = useState<DecisionNode>(() => generateDecisionTree())
-  const [anomalies] = useState<AnomalyEvent[]>(() => generateAnomalies())
+  const addBlock = async () => {
+    if (!newBlockData.trim() || isMining) return
+    
+    setIsMining(true)
+    setValidationResult(null)
+    setTamperedIndex(null)
+    
+    const previousBlock = blocks[blocks.length - 1]
+    const newBlock = await mineBlock(blocks.length, previousBlock.hash, newBlockData, 2)
+    
+    setBlocks([...blocks, newBlock])
+    setNewBlockData('')
+    setIsMining(false)
+  }
 
-  const tabs = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { id: 'decisions', label: 'Decision Paths', icon: '🔀' },
-    { id: 'logs', label: 'Log Explorer', icon: '📋' },
-    { id: 'anomalies', label: 'Anomaly Detection', icon: '🚨' },
-    { id: 'compliance', label: 'Compliance', icon: '📜' },
-    { id: 'timeline', label: 'Timeline', icon: '⏱️' },
-    { id: 'crypto', label: 'Crypto Proofs', icon: '🔐' },
-    { id: 'access', label: 'Access Control', icon: '🔑' },
-  ]
+  const validateBlockchain = async () => {
+    const result = await validateChain(blocks)
+    setValidationResult(result)
+  }
+
+  const tamperWithBlock = (index: number) => {
+    if (tamperedIndex === index && tamperValue) {
+      setBlocks(blocks.map((b, i) => 
+        i === index ? { ...b, data: tamperValue } : b
+      ))
+      setTamperedIndex(null)
+      setTamperValue('')
+      setValidationResult(null)
+    } else {
+      setTamperedIndex(index)
+      setTamperValue(blocks[index].data)
+    }
+  }
 
   return (
-    <div className="auditability-page">
-      {/* Hero Section */}
-      <section className="page-hero">
-        <div className="hero-badge">
-          <span className="badge badge-primary">Trust Layer</span>
-          <span className="badge badge-success">Production Ready</span>
-        </div>
+    <div className="space-y-6 animate-slide-in">
+      {/* Mining Panel */}
+      <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6">
+        <h2 className="text-xl font-bold text-cyan-400 mb-4">⛓️ Blockchain Explorer</h2>
         
-        <h1 className="page-title">
-          <span className="icon-large">🔍</span>
-          Auditability & Traceability
-        </h1>
-        
-        <p className="page-subtitle">
-          Immutable, structured reasoning logs that enable operators to trace exactly why an agent 
-          chose a specific, non-linear path of action. Complete transparency into AI decision-making 
-          with cryptographic guarantees of integrity.
-        </p>
+        <div className="flex gap-3">
+          <input
+            type="text"
+            value={newBlockData}
+            onChange={(e) => setNewBlockData(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && addBlock()}
+            placeholder="Enter block data..."
+            disabled={isMining}
+            className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-cyan-500 outline-none disabled:opacity-50"
+          />
+          <button
+            onClick={addBlock}
+            disabled={isMining || !newBlockData.trim()}
+            className="px-6 py-3 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 rounded-lg font-medium transition-all flex items-center gap-2"
+          >
+            {isMining ? (
+              <>
+                <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                Mining...
+              </>
+            ) : (
+              <>⛏️ Mine Block</>
+            )}
+          </button>
+          <button
+            onClick={validateBlockchain}
+            className="px-4 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-medium transition-colors"
+          >
+            Validate
+          </button>
+        </div>
+      </div>
 
-        <div className="hero-stats">
-          <div className="stat">
-            <span className="stat-value">100%</span>
-            <span className="stat-log">Immutable Logs</span>
-          </div>
-          <div className="stat">
-            <span className="stat-value">&lt;5ms</span>
-            <span className="stat-log">Trace Latency</span>
-          </div>
-          <div className="stat">
-            <span className="stat-value">SHA-256</span>
-            <span className="stat-log">Hash Chain</span>
-          </div>
-          <div className="stat">
-            <span className="stat-value">GDPR</span>
-            <span className="stat-log">Compliant</span>
-          </div>
-          <div className="stat">
-            <span className="stat-value">Real-time</span>
-            <span className="stat-log">Monitoring</span>
-          </div>
-          <div className="stat">
-            <span className="stat-value">ML</span>
-            <span className="stat-log">Anomaly Detection</span>
+      {/* Validation Result */}
+      {validationResult && (
+        <div className={`rounded-xl p-4 border ${
+          validationResult.valid 
+            ? 'bg-emerald-500/10 border-emerald-500/30' 
+            : 'bg-red-500/10 border-red-500/30'
+        }`}>
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">{validationResult.valid ? '✅' : '❌'}</span>
+            <span className={validationResult.valid ? 'text-emerald-400' : 'text-red-400'}>
+              {validationResult.message}
+            </span>
           </div>
         </div>
-      </section>
+      )}
 
-      {/* Feature Highlights */}
-      <section className="features-showcase">
-        <h2>Core Capabilities</h2>
-        
-        <div className="features-grid">
-          <div className="feature-card">
-            <div className="feature-icon">🔗</div>
-            <h3>Hash Chain Immutability</h3>
-            <p>Every log entry cryptographically linked to its predecessor. Any tampering immediately detectable through chain validation.</p>
-            <div className="feature-tech">
-              <span>SHA-256</span>
-              <span>Merkle Trees</span>
-              <span>Blockchain-style</span>
+      {/* Blocks Display */}
+      <div className="space-y-4">
+        {blocks.map((block, idx) => (
+          <div 
+            key={idx}
+            className={`bg-slate-900 rounded-xl border overflow-hidden transition-all ${
+              idx === blocks.length - 1 ? 'border-cyan-500/50 pulse-glow' : 'border-slate-800'
+            } ${tamperedIndex === idx ? 'border-amber-500/50' : ''}`}
+          >
+            <div className={`px-4 py-2 flex items-center justify-between ${
+              idx === 0 ? 'bg-purple-600/20' : 'bg-slate-800/50'
+            }`}>
+              <div className="flex items-center gap-3">
+                <span className="px-2 py-0.5 bg-slate-700 rounded text-xs font-mono">#{block.index}</span>
+                <span className="text-sm text-slate-300">
+                  {idx === 0 ? 'Genesis Block' : `Block ${block.index}`}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500">
+                  Nonce: <span className="text-cyan-400 font-mono">{block.nonce.toLocaleString()}</span>
+                </span>
+                <button
+                  onClick={() => tamperWithBlock(idx)}
+                  className="px-2 py-1 bg-amber-600/20 text-amber-400 hover:bg-amber-600/30 rounded text-xs transition-colors"
+                >
+                  {tamperedIndex === idx ? 'Save' : 'Tamper'}
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-4 space-y-3">
+              {tamperedIndex === idx ? (
+                <input
+                  type="text"
+                  value={tamperValue}
+                  onChange={(e) => setTamperValue(e.target.value)}
+                  className="w-full bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2 text-amber-200 focus:outline-none"
+                  autoFocus
+                />
+              ) : (
+                <p className="text-sm text-slate-300">{block.data}</p>
+              )}
+              
+              <div className="grid md:grid-cols-2 gap-3 text-xs">
+                <div className="bg-slate-800/50 rounded-lg p-3">
+                  <div className="text-slate-500 mb-1">Hash</div>
+                  <div className="mono text-emerald-400 break-all">{block.hash || 'Computing...'}</div>
+                </div>
+                <div className="bg-slate-800/50 rounded-lg p-3">
+                  <div className="text-slate-500 mb-1">Previous Hash</div>
+                  <div className="mono text-slate-400 break-all">{block.previousHash}</div>
+                </div>
+              </div>
+              
+              <div className="text-xs text-slate-500">
+                {new Date(block.timestamp).toLocaleString()}
+              </div>
             </div>
           </div>
+        ))}
+      </div>
 
-          <div className="feature-card">
-            <div className="feature-icon">🌳</div>
-            <h3>Decision Path Visualization</h3>
-            <p>Interactive tree graphs showing complete decision hierarchies. Trace every branch, understand every choice, identify divergence points.</p>
-            <div className="feature-tech">
-              <span>DAG Rendering</span>
-              <span>Confidence Scores</span>
-              <span>Time Travel</span>
-            </div>
-          </div>
-
-          <div className="feature-card">
-            <div className="feature-icon">🤖</div>
-            <h3>ML Anomaly Detection</h3>
-            <p>Machine learning models continuously monitor decision patterns for anomalies, drift, loops, and unexpected behaviors.</p>
-            <div className="feature-tech">
-              <span>Pattern Recognition</span>
-              <span>Statistical Models</span>
-              <span>Alert System</span>
-            </div>
-          </div>
-
-          <div className="feature-card">
-            <div className="feature-icon">📜</div>
-            <h3>Regulatory Compliance</h3>
-            <p>Built-in support for GDPR right-to-explanation, SOC2 audit requirements, HIPAA logging standards, and ISO 27001 controls.</p>
-            <div className="feature-tech">
-              <span>GDPR Art. 22</span>
-              <span>SOC2 CC6</span>
-              <span>ISO27001</span>
-            </div>
-          </div>
-
-          <div className="feature-card">
-            <div className="feature-icon">⏱️</div>
-            <h3>Real-time Timeline</h3>
-            <p>Chronological visualization of all agent activities with filtering, search, and drill-down capabilities for forensic analysis.</p>
-            <div className="feature-tech">
-              <span>Live Updates</span>
-              <span>Time Filters</span>
-              <span>Export Tools</span>
-            </div>
-          </div>
-
-          <div className="feature-card">
-            <div className="feature-icon">🔑</div>
-            <h3>Granular Access Control</h3>
-            <p>Role-based permissions ensure appropriate access levels. Every access attempt logged for complete accountability.</p>
-            <div className="feature-tech">
-              <span>RBAC</span>
-              <span>Audit Logging</span>
-              <span>MFA Support</span>
-            </div>
-          </div>
+      {blocks.length === 1 && (
+        <div className="text-center py-12 text-slate-500">
+          <p>Mine your first block to see the blockchain grow!</p>
+          <p className="text-sm mt-2">Each block is cryptographically linked to the previous one.</p>
         </div>
-      </section>
+      )}
+    </div>
+  )
+}
 
-      {/* Tab Navigation */}
-      <section className="tab-navigation">
-        <div className="tab-bar">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <span className="tab-icon">{tab.icon}</span>
-              <span className="tab-label">{tab.label}</span>
-            </button>
-          ))}
-        </div>
-      </section>
+// ============ COMPONENT 9: SUBSCRIPTION SECTION ============
 
-      {/* Tab Content Panels */}
-      <section className="tab-content">
-        {activeTab === 'dashboard' && <AuditDashboard logs={logs} />}
-        {activeTab === 'decisions' && <DecisionPathVisualizer tree={decisionTree} />}
-        {activeTab === 'logs' && <LogExplorer logs={logs} />}
-        {activeTab === 'anomalies' && <AnomalyDetector anomalies={anomalies} />}
-        {activeTab === 'compliance' && <CompliancePanel rules={complianceRules} />}
-        {activeTab === 'timeline' && <TimelineVisualization logs={logs} />}
-        {activeTab === 'crypto' && <CryptographicProofPanel logs={logs} />}
-        {activeTab === 'access' && <AccessControlMatrix />}
-      </section>
-
-      {/* Integration Example */}
-      <section className="integration-section">
-        <h2>Integration Example</h2>
-        <p className="section-description">
-          Implement auditability in your SciMSPT application with these production-ready patterns.
-        </p>
-
-        <div className="code-block">
-          <pre>
-            <code>{`// Import the AuditTrail module
-import { AuditTrail, DecisionLogger, HashChain } from '@/lib/audit/trail'
-
-// Initialize audit trail with immutable storage backend
-const audit = new AuditTrail({
-  storage: new ImmutableLogStore('./audit-logs'),
-  hashing: 'sha256',
-  enableMerkleTrees: true,
-  merkleThreshold: 1000, // New Merkle root every 1000 entries
-})
-
-// Log a decision with full context
-await audit.logDecision({
-  agentId: 'code-generator',
-  actionType: 'decision',
-  input: userRequest,
-  output: generatedCode,
-  confidence: classifierScore,
-  reasoningPath: ['intent', 'classify', 'route', 'generate'],
-  metadata: {
-    sessionId: currentSession.id,
-    modelVersion: 'v2.3.1',
-    processingTime: performance.now() - startTime,
+function SubscriptionSection() {
+  const usageStats = {
+    hashVerifications: { used: 234, limit: 1000, unit: 'daily' },
+    auditExports: { used: 3, limit: 10, unit: 'daily' },
+    complianceReports: { used: 1, limit: 3, unit: 'monthly' }
   }
-})
 
-// Verify chain integrity before producing reports
-const isValid = await audit.verifyChainIntegrity()
-console.log(\`Audit trail intact: \${isValid}\`)
-
-// Export compliance report for regulators
-const gdprReport = await audit.exportComplianceReport({
-  framework: 'GDPR',
-  dateRange: { start: lastQuarter, end: now },
-  includeExplanations: true, // Right to explanation (Art. 22)
-})`}</code>
-          </pre>
+  return (
+    <div className="space-y-6 animate-slide-in">
+      {/* Status Banner */}
+      <div className="bg-gradient-to-r from-emerald-600/20 via-cyan-600/20 to-blue-600/20 rounded-2xl border border-emerald-500/30 p-6">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-emerald-500/20 flex items-center justify-center">
+            <span className="text-3xl">✅</span>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-white">Fully Operational</h2>
+            <p className="text-emerald-400">This page is fully functional with real cryptographic computations!</p>
+          </div>
         </div>
-      </section>
+      </div>
 
-      {/* Related Pillars Navigation */}
-      <section className="related-section">
-        <h2>Related Architecture Pillars</h2>
-        <p className="section-description">
-          Auditability integrates with other pillars to form the complete trustworthy AI architecture.
-        </p>
+      {/* Usage Stats */}
+      <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">📊 Free Tier Usage</h3>
+        
+        <div className="space-y-6">
+          {Object.entries(usageStats).map(([key, stat]) => {
+            const percentage = (stat.used / stat.limit) * 100
+            const isNearLimit = percentage > 80
+            
+            return (
+              <div key={key}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-slate-300 capitalize">
+                    {key.replace(/([A-Z])/g, ' $1').trim()}
+                  </span>
+                  <span className={`text-sm font-medium ${isNearLimit ? 'text-amber-400' : 'text-slate-400'}`}>
+                    {stat.used.toLocaleString()} / {stat.limit.toLocaleString()} {stat.unit}
+                  </span>
+                </div>
+                <div className="h-3 bg-slate-800 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      isNearLimit ? 'bg-gradient-to-r from-amber-500 to-orange-500' : 'bg-gradient-to-r from-emerald-500 to-cyan-500'
+                    }`}
+                    style={{ width: `${percentage}%` }}
+                  />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
 
-        <div className="related-grid">
-          {relatedPillars.map((pillar) => (
-            <PillarCard
-              key={pillar.id}
-              id={pillar.id}
-              name={pillar.name}
-              fullName=""
-              icon={pillar.icon}
-              description=""
-              status="Designed"
-              href={pillar.href}
-            />
+      {/* Pricing Cards */}
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Free Tier */}
+        <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6">
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-bold text-white">Free Tier</h3>
+            <div className="text-3xl font-bold text-slate-300 mt-2">$0<span className="text-base font-normal text-slate-500">/mo</span></div>
+          </div>
+          
+          <ul className="space-y-3 mb-6">
+            {[
+              '1,000 hash verifications/day',
+              '10 audit log exports/day',
+              '3 compliance reports/month',
+              'Basic anomaly detection',
+              'Standard blockchain features',
+              'Community support'
+            ].map((feature, idx) => (
+              <li key={idx} className="flex items-center gap-2 text-sm text-slate-300">
+                <span className="text-emerald-400">✓</span>
+                {feature}
+              </li>
+            ))}
+          </ul>
+          
+          <div className="text-center py-3 bg-slate-800 rounded-lg text-slate-400 font-medium">
+            Current Plan
+          </div>
+        </div>
+
+        {/* PRO Tier */}
+        <div className="bg-gradient-to-br from-emerald-600/20 to-cyan-600/20 rounded-2xl border border-emerald-500/50 p-6 relative overflow-hidden">
+          <div className="absolute top-4 right-4 px-3 py-1 bg-emerald-500 rounded-full text-xs font-bold text-black">
+            PRO
+          </div>
+          
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-bold text-white">Professional</h3>
+            <div className="text-3xl font-bold text-emerald-400 mt-2">$19<span className="text-base font-normal text-slate-400">/mo</span></div>
+          </div>
+          
+          <ul className="space-y-3 mb-6">
+            {[
+              'Unlimited everything',
+              'Custom compliance frameworks',
+              'Advanced ML anomaly detection',
+              'Real-time monitoring alerts',
+              'Priority support',
+              'API access',
+              'Team collaboration',
+              'Custom branding'
+            ].map((feature, idx) => (
+              <li key={idx} className="flex items-center gap-2 text-sm text-slate-200">
+                <span className="text-emerald-400">★</span>
+                {feature}
+              </li>
+            ))}
+          </ul>
+          
+          <a
+            href="https://github.com/sponsors/testdemoqwenai2025-creator"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block text-center py-3 bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 rounded-lg text-white font-bold transition-all"
+          >
+            Upgrade to PRO →
+          </a>
+        </div>
+      </div>
+
+      {/* Features Grid */}
+      <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">✨ What You Get Today (Free)</h3>
+        
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[
+            { icon: '🔐', title: 'Real SHA-256', desc: 'Web Crypto API hashing' },
+            { icon: '📡', title: 'Live Stream', desc: 'Auto-updating audit logs' },
+            { icon: '🌳', title: 'Merkle Trees', desc: 'Build & verify trees' },
+            { icon: '📋', title: 'Compliance', desc: 'GDPR/SOC2/HIPAA/ISO' },
+            { icon: '🔀', title: 'Decisions', desc: 'Path explorer with reasons' },
+            { icon: '🚨', title: 'Anomalies', desc: 'ML-style detection' },
+            { icon: '🛡️', title: 'RBAC', desc: 'Permission simulator' },
+            { icon: '⛓️', title: 'Blockchain', desc: 'Mine & validate blocks' },
+            { icon: '🖨️', title: 'Export', desc: 'CSV/JSON downloads' }
+          ].map((feature, idx) => (
+            <div key={idx} className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 hover:border-emerald-500/30 transition-colors">
+              <div className="text-2xl mb-2">{feature.icon}</div>
+              <div className="font-medium text-white text-sm">{feature.title}</div>
+              <div className="text-xs text-slate-400 mt-1">{feature.desc}</div>
+            </div>
           ))}
         </div>
-      </section>
-
-      {/* Navigation Actions */}
-      <section className="actions-section">
-        <Link href="/" className="btn btn-outline">
-          ← Back to Overview
-        </Link>
-        <a 
-          href="https://github.com/testdemoqwenai2025-creator/Demo3SciMSPT/tree/feature/auditability"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn btn-primary"
-        >
-          View Source Code →
-        </a>
-      </section>
-
-      <style jsx>{`
-        .auditability-page {
-          animation: fadeInUp 0.5s ease-out;
-        }
-
-        /* Page Hero */
-        .page-hero {
-          text-align: center;
-          padding: var(--space-2xl) 0;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-          margin-bottom: var(--space-2xl);
-        }
-
-        .hero-badge {
-          display: flex;
-          gap: 0.5rem;
-          justify-content: center;
-          margin-bottom: var(--space-md);
-        }
-
-        .page-title {
-          font-size: clamp(2rem, 5vw, 3.5rem);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: var(--space-md);
-          margin-bottom: var(--space-lg);
-        }
-
-        .icon-large {
-          font-size: 3rem;
-        }
-
-        .page-subtitle {
-          font-size: 1.125rem;
-          color: #94a3b8;
-          max-width: 900px;
-          margin: 0 auto var(--space-xl);
-          line-height: 1.7;
-        }
-
-        /* Stats Grid */
-        .hero-stats {
-          display: flex;
-          justify-content: center;
-          gap: 3rem;
-          flex-wrap: wrap;
-        }
-
-        .stat {
-          text-align: center;
-        }
-
-        .stat-value {
-          display: block;
-          font-size: 1.75rem;
-          font-weight: 700;
-          color: #60a5fa;
-        }
-
-        .stat-label, .stat-log {
-          font-size: 0.85rem;
-          color: #64748b;
-        }
-
-        /* Features Showcase */
-        .features-showcase h2 {
-          margin-bottom: var(--space-xl);
-        }
-
-        .features-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-          gap: var(--space-lg);
-        }
-
-        .feature-card {
-          background: rgba(30, 41, 59, 0.5);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: var(--radius-xl);
-          padding: var(--space-lg);
-          transition: all var(--transition-normal);
-        }
-
-        .feature-card:hover {
-          transform: translateY(-4px);
-          border-color: rgba(59, 130, 246, 0.4);
-        }
-
-        .feature-icon {
-          font-size: 2.5rem;
-          margin-bottom: var(--space-md);
-          display: block;
-        }
-
-        .feature-card h3 {
-          font-size: 1.125rem;
-          margin-bottom: var(--space-sm);
-        }
-
-        .feature-card p {
-          color: #94a3b8;
-          font-size: 0.95rem;
-          line-height: 1.6;
-          margin-bottom: var(--space-md);
-        }
-
-        .feature-tech {
-          display: flex;
-          gap: 0.5rem;
-          flex-wrap: wrap;
-        }
-
-        .feature-tech span {
-          padding: 0.25rem 0.625rem;
-          background: rgba(59, 130, 246, 0.15);
-          border-radius: 9999px;
-          font-size: 0.75rem;
-          color: #60a5fa;
-          font-weight: 500;
-        }
-
-        /* Tab Navigation */
-        .tab-navigation {
-          margin-bottom: var(--space-lg);
-        }
-
-        .tab-bar {
-          display: flex;
-          gap: 0.25rem;
-          padding: 0.5rem;
-          background: rgba(30, 41, 59, 0.5);
-          border-radius: var(--radius-lg);
-          overflow-x: auto;
-          border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .tab-btn {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.75rem 1.25rem;
-          border: none;
-          background: transparent;
-          color: #94a3b8;
-          border-radius: var(--radius-md);
-          cursor: pointer;
-          font-size: 0.9rem;
-          font-weight: 500;
-          transition: all var(--transition-fast);
-          white-space: nowrap;
-        }
-
-        .tab-btn:hover {
-          color: #f1f5f9;
-          background: rgba(255, 255, 255, 0.05);
-        }
-
-        .tab-btn.active {
-          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-          color: white;
-        }
-
-        .tab-icon {
-          font-size: 1rem;
-        }
-
-        /* Tab Content */
-        .tab-content {
-          min-height: 400px;
-        }
-
-        /* Dashboard Styles */
-        .audit-dashboard {
-          margin-bottom: var(--space-xl);
-        }
-
-        .dashboard-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          gap: var(--space-lg);
-        }
-
-        .metric-card {
-          background: rgba(30, 41, 59, 0.5);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: var(--radius-xl);
-          padding: var(--space-lg);
-          position: relative;
-          overflow: hidden;
-        }
-
-        .metric-card::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 3px;
-        }
-
-        .metric-primary::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
-        .metric-success::before { background: linear-gradient(90deg, #10b981, #34d399); }
-        .metric-warning::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
-        .metric-info::before { background: linear-gradient(90deg, #06b6d4, #22d3ee); }
-        .metric-danger::before { background: linear-gradient(90deg, #ef4444, #f87171); }
-        .metric-purple::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
-
-        .metric-icon {
-          font-size: 2rem;
-          margin-bottom: var(--space-sm);
-        }
-
-        .metric-content {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .metric-value {
-          font-size: 1.75rem;
-          font-weight: 700;
-          color: #f1f5f9;
-        }
-
-        .metric-label {
-          font-size: 0.85rem;
-          color: #64748b;
-        }
-
-        .metric-sparkline {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          height: 40px;
-          display: flex;
-          align-items: flex-end;
-          gap: 2px;
-          padding: 0 8px;
-        }
-
-        .spark-bar {
-          flex: 1;
-          background: rgba(59, 130, 246, 0.3);
-          border-radius: 2px 2px 0 0;
-          min-height: 4px;
-        }
-
-        .metric-indicator {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          margin-top: var(--space-sm);
-          font-size: 0.8rem;
-          color: #10b981;
-        }
-
-        .indicator-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          animation: pulse 2s ease-in-out infinite;
-        }
-
-        .indicator-dot.online { background: #10b981; }
-
-        .metric-mini-chart svg {
-          width: 80px;
-          height: 30px;
-          margin-top: var(--space-sm);
-        }
-
-        .metric-trend {
-          display: flex;
-          flex-direction: column;
-          margin-top: var(--space-sm);
-          font-size: 0.8rem;
-        }
-
-        .trend-down { color: #10b981; }
-        .trend-up { color: #ef4444; }
-
-        .metric-breakdown {
-          display: flex;
-          flex-direction: column;
-          margin-top: var(--space-sm);
-          font-size: 0.8rem;
-          color: #94a3b8;
-        }
-
-        .metric-verification {
-          display: flex;
-          flex-direction: column;
-          margin-top: var(--space-sm);
-          font-size: 0.8rem;
-        }
-
-        .verified-badge {
-          color: #10b981;
-          font-weight: 600;
-        }
-
-        /* Decision Tree Visualizer */
-        .decision-visualizer {
-          background: rgba(30, 41, 59, 0.3);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: var(--radius-xl);
-          padding: var(--space-xl);
-        }
-
-        .visualizer-header h3 {
-          margin-bottom: var(--space-sm);
-        }
-
-        .visualizer-header p {
-          color: #64748b;
-          font-size: 0.9rem;
-          margin-bottom: var(--space-lg);
-        }
-
-        .tree-container {
-          max-height: 500px;
-          overflow-y: auto;
-          padding-right: var(--space-md);
-        }
-
-        .tree-node {
-          margin-bottom: 0.25rem;
-        }
-
-        .node-content {
-          background: rgba(15, 23, 42, 0.6);
-          border-left: 3px solid;
-          border-radius: var(--radius-md);
-          padding: 0.875rem 1rem;
-          cursor: pointer;
-          transition: all var(--transition-fast);
-        }
-
-        .node-content:hover {
-          background: rgba(30, 41, 59, 0.8);
-        }
-
-        .node-content.selected {
-          background: rgba(59, 130, 246, 0.15);
-        }
-
-        .node-header {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-        }
-
-        .expand-icon {
-          font-size: 0.7rem;
-          color: #64748b;
-          transition: transform var(--transition-fast);
-          width: 16px;
-        }
-
-        .expand-icon.expanded {
-          transform: rotate(90deg);
-        }
-
-        .expand-icon.placeholder {
-          visibility: hidden;
-        }
-
-        .node-icon {
-          font-size: 1rem;
-        }
-
-        .node-label {
-          flex: 1;
-          font-weight: 500;
-          color: #e2e8f0;
-        }
-
-        .node-meta {
-          display: flex;
-          gap: 0.5rem;
-          align-items: center;
-        }
-
-        .confidence-badge {
-          padding: 0.125rem 0.5rem;
-          border-radius: 9999px;
-          font-size: 0.75rem;
-          font-weight: 600;
-        }
-
-        .node-type-badge {
-          padding: 0.125rem 0.5rem;
-          background: rgba(100, 116, 139, 0.2);
-          border-radius: 9999px;
-          font-size: 0.7rem;
-          color: #94a3b8;
-          text-transform: uppercase;
-        }
-
-        .node-data {
-          margin-top: 0.75rem;
-          padding-top: 0.75rem;
-          border-top: 1px solid rgba(255, 255, 255, 0.05);
-          display: flex;
-          gap: 1rem;
-          flex-wrap: wrap;
-        }
-
-        .data-row {
-          display: flex;
-          gap: 0.5rem;
-          font-size: 0.85rem;
-        }
-
-        .data-key {
-          color: #64748b;
-        }
-
-        .data-value {
-          color: #60a5fa;
-          font-family: monospace;
-        }
-
-        .node-timestamp {
-          margin-top: 0.5rem;
-          font-size: 0.75rem;
-          color: #64748b;
-        }
-
-        .node-children {
-          margin-top: 0.25rem;
-          padding-left: 1.25rem;
-          border-left: 1px dashed rgba(255, 255, 255, 0.1);
-        }
-
-        .node-detail-panel {
-          margin-top: var(--space-lg);
-          padding: var(--space-lg);
-          background: rgba(15, 23, 42, 0.6);
-          border-radius: var(--radius-lg);
-          border: 1px solid rgba(59, 130, 246, 0.2);
-        }
-
-        .node-detail-panel h4 {
-          margin-bottom: var(--space-md);
-          color: #60a5fa;
-        }
-
-        .detail-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: var(--space-md);
-        }
-
-        .detail-item {
-          display: flex;
-          flex-direction: column;
-          gap: 0.25rem;
-        }
-
-        .detail-item.full-width {
-          grid-column: 1 / -1;
-        }
-
-        .detail-label {
-          font-size: 0.8rem;
-          color: #64748b;
-        }
-
-        .detail-value {
-          color: #e2e8f0;
-        }
-
-        .detail-value.capitalize {
-          text-transform: capitalize;
-        }
-
-        .detail-value.mono {
-          font-family: monospace;
-          font-size: 0.85rem;
-        }
-
-        .confidence-bar {
-          height: 8px;
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 4px;
-          overflow: hidden;
-          margin-bottom: 0.25rem;
-        }
-
-        .confidence-fill {
-          height: 100%;
-          background: linear-gradient(90deg, #3b82f6, #10b981);
-          border-radius: 4px;
-          transition: width var(--transition-normal);
-        }
-
-        .legend {
-          display: flex;
-          gap: 1.5rem;
-          margin-top: var(--space-lg);
-          padding-top: var(--space-lg);
-          border-top: 1px solid rgba(255, 255, 255, 0.05);
-          flex-wrap: wrap;
-        }
-
-        .legend-title {
-          font-weight: 600;
-          color: #94a3b8;
-        }
-
-        .legend-item {
-          display: flex;
-          align-items: center;
-          gap: 0.375rem;
-          font-size: 0.85rem;
-          color: #94a3b8;
-        }
-
-        .legend-icon {
-          font-size: 1rem;
-        }
-
-        /* Log Explorer */
-        .log-explorer {
-          background: rgba(30, 41, 59, 0.3);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: var(--radius-xl);
-          overflow: hidden;
-        }
-
-        .explorer-toolbar {
-          display: flex;
-          gap: 1rem;
-          padding: var(--space-md);
-          background: rgba(15, 23, 42, 0.6);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-          flex-wrap: wrap;
-          align-items: center;
-        }
-
-        .search-box {
-          flex: 1;
-          min-width: 250px;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.625rem 1rem;
-          background: rgba(15, 23, 42, 0.8);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: var(--radius-md);
-        }
-
-        .search-icon {
-          font-size: 1rem;
-        }
-
-        .search-input {
-          flex: 1;
-          background: transparent;
-          border: none;
-          outline: none;
-          color: #e2e8f0;
-          font-size: 0.9rem;
-        }
-
-        .search-input::placeholder {
-          color: #64748b;
-        }
-
-        .filter-group {
-          display: flex;
-          gap: 0.5rem;
-          flex-wrap: wrap;
-        }
-
-        .filter-select {
-          padding: 0.5rem 0.75rem;
-          background: rgba(15, 23, 42, 0.8);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: var(--radius-md);
-          color: #e2e8f0;
-          font-size: 0.85rem;
-          cursor: pointer;
-        }
-
-        .results-count {
-          font-size: 0.85rem;
-          color: #64748b;
-          margin-left: auto;
-        }
-
-        .log-viewer-layout {
-          display: grid;
-          grid-template-columns: 1fr 400px;
-          min-height: 500px;
-        }
-
-        @media (max-width: 1024px) {
-          .log-viewer-layout {
-            grid-template-columns: 1fr;
-          }
-        }
-
-        .log-list {
-          overflow-y: auto;
-          max-height: 600px;
-        }
-
-        .log-entry {
-          padding: 1rem;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-          cursor: pointer;
-          transition: background var(--transition-fast);
-        }
-
-        .log-entry:hover {
-          background: rgba(255, 255, 255, 0.02);
-        }
-
-        .log-entry.selected {
-          background: rgba(59, 130, 246, 0.1);
-          border-left: 3px solid #3b82f6;
-        }
-
-        .log-entry-header {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          margin-bottom: 0.5rem;
-        }
-
-        .action-type-badge {
-          padding: 0.2rem 0.5rem;
-          border-radius: 4px;
-          font-size: 0.7rem;
-          font-weight: 600;
-          text-transform: uppercase;
-        }
-
-        .action-decision { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
-        .action-reasoning { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
-        .action-execution { background: rgba(16, 185, 129, 0.2); color: #34d399; }
-        .action-correction { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
-        .action-validation { background: rgba(6, 182, 212, 0.2); color: #22d3ee; }
-
-        .log-agent {
-          font-weight: 500;
-          color: #e2e8f0;
-          font-size: 0.9rem;
-        }
-
-        .log-confidence {
-          margin-left: auto;
-          font-size: 0.85rem;
-          color: #94a3b8;
-        }
-
-        .log-time {
-          font-size: 0.8rem;
-          color: #64748b;
-        }
-
-        .log-entry-preview {
-          display: flex;
-          gap: 0.5rem;
-          font-size: 0.85rem;
-          color: #94a3b8;
-          margin-bottom: 0.5rem;
-        }
-
-        .preview-input, .preview-output {
-          flex: 1;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .preview-arrow {
-          color: #64748b;
-        }
-
-        .log-hash-preview {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          font-size: 0.75rem;
-        }
-
-        .hash-indicator.verified {
-          color: #10b981;
-        }
-
-        .hash-short {
-          font-family: monospace;
-          color: #64748b;
-        }
-
-        .log-detail-panel {
-          border-left: 1px solid rgba(255, 255, 255, 0.08);
-          overflow-y: auto;
-          max-height: 600px;
-        }
-
-        .panel-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 1rem;
-          background: rgba(15, 23, 42, 0.6);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .panel-header h4 {
-          font-size: 1rem;
-        }
-
-        .toggle-json-btn {
-          padding: 0.375rem 0.75rem;
-          background: rgba(59, 130, 246, 0.2);
-          border: none;
-          border-radius: var(--radius-sm);
-          color: #60a5fa;
-          font-size: 0.8rem;
-          cursor: pointer;
-          transition: background var(--transition-fast);
-        }
-
-        .toggle-json-btn:hover {
-          background: rgba(59, 130, 246, 0.3);
-        }
-
-        .detail-content {
-          padding: 1rem;
-        }
-
-        .detail-section {
-          margin-bottom: 1.5rem;
-        }
-
-        .detail-section h5 {
-          font-size: 0.9rem;
-          color: #94a3b8;
-          margin-bottom: 0.75rem;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-        }
-
-        .metadata-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 0.75rem;
-        }
-
-        .meta-item {
-          display: flex;
-          flex-direction: column;
-          gap: 0.25rem;
-        }
-
-        .meta-label {
-          font-size: 0.75rem;
-          color: #64748b;
-        }
-
-        .meta-value {
-          font-size: 0.9rem;
-          color: #e2e8f0;
-        }
-
-        .meta-value.mono {
-          font-family: monospace;
-          word-break: break-all;
-        }
-
-        .io-container {
-          display: flex;
-          gap: 0.75rem;
-          align-items: stretch;
-        }
-
-        .io-block {
-          flex: 1;
-          background: rgba(15, 23, 42, 0.6);
-          border-radius: var(--radius-md);
-          padding: 0.75rem;
-        }
-
-        .io-label {
-          display: block;
-          font-size: 0.7rem;
-          color: #64748b;
-          text-transform: uppercase;
-          margin-bottom: 0.5rem;
-        }
-
-        .io-content {
-          font-family: monospace;
-          font-size: 0.8rem;
-          color: #94a3b8;
-          white-space: pre-wrap;
-          word-break: break-word;
-          margin: 0;
-        }
-
-        .io-arrow {
-          display: flex;
-          align-items: center;
-          color: #64748b;
-          font-size: 1.25rem;
-        }
-
-        .reasoning-path {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.25rem;
-          align-items: center;
-        }
-
-        .path-step {
-          display: flex;
-          align-items: center;
-          gap: 0.25rem;
-        }
-
-        .path-separator {
-          color: #64748b;
-        }
-
-        .step-name {
-          padding: 0.25rem 0.625rem;
-          background: rgba(139, 92, 246, 0.15);
-          border-radius: 9999px;
-          font-size: 0.8rem;
-          color: #a78bfa;
-        }
-
-        .crypto-proofs {
-          display: flex;
-          flex-direction: column;
-          gap: 0.75rem;
-        }
-
-        .proof-item {
-          background: rgba(15, 23, 42, 0.6);
-          border-radius: var(--radius-md);
-          padding: 0.75rem;
-        }
-
-        .proof-label {
-          display: block;
-          font-size: 0.75rem;
-          color: #64748b;
-          margin-bottom: 0.25rem;
-        }
-
-        .proof-value {
-          display: block;
-          font-size: 0.8rem;
-          word-break: break-all;
-        }
-
-        .proof-value.hash {
-          color: #10b981;
-        }
-
-        .proof-status {
-          display: inline-block;
-          margin-top: 0.375rem;
-          padding: 0.125rem 0.5rem;
-          border-radius: 4px;
-          font-size: 0.75rem;
-          font-weight: 600;
-        }
-
-        .proof-status.valid {
-          background: rgba(16, 185, 129, 0.15);
-          color: #10b981;
-        }
-
-        .proof-status.invalid {
-          background: rgba(239, 68, 68, 0.15);
-          color: #ef4444;
-        }
-
-        .extended-metadata {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 0.5rem;
-        }
-
-        .ext-meta-item {
-          display: flex;
-          justify-content: space-between;
-          padding: 0.375rem 0.5rem;
-          background: rgba(15, 23, 42, 0.4);
-          border-radius: var(--radius-sm);
-          font-size: 0.8rem;
-        }
-
-        .ext-meta-key {
-          color: #64748b;
-        }
-
-        .ext-meta-value {
-          color: #e2e8f0;
-          font-family: monospace;
-        }
-
-        .raw-json {
-          padding: 1rem;
-          font-family: monospace;
-          font-size: 0.8rem;
-          line-height: 1.6;
-          color: #94a3b8;
-          overflow-x: auto;
-          margin: 0;
-          white-space: pre-wrap;
-          word-break: break-word;
-        }
-
-        /* Anomaly Detector */
-        .anomaly-detector {
-          background: rgba(30, 41, 59, 0.3);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: var(--radius-xl);
-          padding: var(--space-xl);
-        }
-
-        .detector-header h3 {
-          margin-bottom: var(--space-sm);
-        }
-
-        .detector-header p {
-          color: #64748b;
-          font-size: 0.9rem;
-          margin-bottom: var(--space-lg);
-        }
-
-        .severity-filters {
-          display: flex;
-          gap: 0.5rem;
-          margin-bottom: var(--space-lg);
-          flex-wrap: wrap;
-        }
-
-        .severity-btn {
-          padding: 0.5rem 1rem;
-          background: rgba(15, 23, 42, 0.6);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: var(--radius-md);
-          color: #94a3b8;
-          font-size: 0.85rem;
-          cursor: pointer;
-          transition: all var(--transition-fast);
-        }
-
-        .severity-btn:hover {
-          border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .severity-btn.active {
-          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-          color: white;
-          border-color: transparent;
-        }
-
-        .anomaly-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-          gap: var(--space-md);
-        }
-
-        .anomaly-card {
-          background: rgba(15, 23, 42, 0.6);
-          border: 2px solid;
-          border-radius: var(--radius-lg);
-          overflow: hidden;
-          cursor: pointer;
-          transition: all var(--transition-fast);
-        }
-
-        .anomaly-card:hover {
-          transform: translateY(-2px);
-        }
-
-        .anomaly-card.selected {
-          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
-        }
-
-        .anomaly-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 0.75rem 1rem;
-        }
-
-        .anomaly-icon {
-          font-size: 1.25rem;
-        }
-
-        .anomaly-type {
-          flex: 1;
-          margin-left: 0.75rem;
-          font-weight: 600;
-          font-size: 0.95rem;
-        }
-
-        .anomaly-status {
-          padding: 0.2rem 0.5rem;
-          border-radius: 9999px;
-          font-size: 0.7rem;
-          font-weight: 600;
-        }
-
-        .status-detected { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
-        .status-investigating { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
-        .status-resolved { background: rgba(16, 185, 129, 0.2); color: #10b981; }
-        .status-false-positive { background: rgba(100, 116, 139, 0.2); color: #94a3b8; }
-
-        .anomaly-body {
-          padding: 1rem;
-        }
-
-        .anomaly-description {
-          font-size: 0.9rem;
-          color: #e2e8f0;
-          line-height: 1.6;
-          margin-bottom: 1rem;
-        }
-
-        .anomaly-meta {
-          display: flex;
-          flex-direction: column;
-          gap: 0.75rem;
-        }
-
-        .meta-row {
-          display: flex;
-          gap: 0.75rem;
-          font-size: 0.85rem;
-        }
-
-        .meta-row.suggestion {
-          padding-top: 0.75rem;
-          border-top: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .meta-label {
-          color: #64748b;
-          min-width: 110px;
-        }
-
-        .meta-value {
-          color: #94a3b8;
-        }
-
-        .suggestion-text {
-          color: #f59e0b;
-          font-style: italic;
-        }
-
-        .agent-tags {
-          display: flex;
-          gap: 0.375rem;
-          flex-wrap: wrap;
-        }
-
-        .agent-tag {
-          padding: 0.125rem 0.5rem;
-          background: rgba(139, 92, 246, 0.15);
-          border-radius: 9999px;
-          font-size: 0.75rem;
-          color: #a78bfa;
-        }
-
-        .anomaly-detail-modal {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.7);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1000;
-          padding: var(--space-lg);
-        }
-
-        .modal-content {
-          background: #1e293b;
-          border-radius: var(--radius-xl);
-          max-width: 600px;
-          width: 100%;
-          max-height: 80vh;
-          overflow-y: auto;
-        }
-
-        .modal-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 1.25rem 1.5rem;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .modal-header button {
-          background: none;
-          border: none;
-          color: #94a3b8;
-          font-size: 1.25rem;
-          cursor: pointer;
-        }
-
-        .modal-body {
-          padding: 1.5rem;
-        }
-
-        .detail-row {
-          display: flex;
-          gap: 1rem;
-          padding: 0.75rem 0;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-        }
-
-        .detail-row.full {
-          flex-direction: column;
-          gap: 0.25rem;
-        }
-
-        .detail-row .detail-label {
-          min-width: 120px;
-          color: #64748b;
-          font-size: 0.9rem;
-        }
-
-        .detail-row .detail-value {
-          color: #e2e8f0;
-          font-size: 0.9rem;
-        }
-
-        .detail-actions {
-          display: flex;
-          gap: 0.75rem;
-          margin-top: 1.5rem;
-          flex-wrap: wrap;
-        }
-
-        .btn-sm {
-          padding: 0.5rem 1rem;
-          font-size: 0.85rem;
-        }
-
-        /* Compliance Panel */
-        .compliance-panel {
-          background: rgba(30, 41, 59, 0.3);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: var(--radius-xl);
-          padding: var(--space-xl);
-        }
-
-        .panel-header h3 {
-          margin-bottom: var(--space-sm);
-        }
-
-        .panel-header p {
-          color: #64748b;
-          font-size: 0.9rem;
-          margin-bottom: var(--space-lg);
-        }
-
-        .compliance-overview {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 1rem;
-          margin-bottom: var(--space-lg);
-        }
-
-        @media (max-width: 768px) {
-          .compliance-overview {
-            grid-template-columns: repeat(2, 1fr);
-          }
-        }
-
-        .overview-stat {
-          text-align: center;
-          padding: 1.25rem;
-          border-radius: var(--radius-lg);
-        }
-
-        .overview-stat.compliant { background: rgba(16, 185, 129, 0.1); }
-        .overview-stat.partial { background: rgba(245, 158, 11, 0.1); }
-        .overview-stat.pending { background: rgba(100, 116, 139, 0.1); }
-        .overview-stat.non_compliant { background: rgba(239, 68, 68, 0.1); }
-
-        .stat-number {
-          display: block;
-          font-size: 2rem;
-          font-weight: 700;
-        }
-
-        .overview-stat.compliant .stat-number { color: #10b981; }
-        .overview-stat.partial .stat-number { color: #f59e0b; }
-        .overview-stat.pending .stat-number { color: #94a3b8; }
-        .overview-stat.non_compliant .stat-number { color: #ef4444; }
-
-        .stat-label {
-          font-size: 0.85rem;
-          color: #64748b;
-        }
-
-        .category-tabs {
-          display: flex;
-          gap: 0.5rem;
-          margin-bottom: var(--space-lg);
-          flex-wrap: wrap;
-        }
-
-        .category-tab {
-          padding: 0.5rem 1rem;
-          background: rgba(15, 23, 42, 0.6);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: var(--radius-md);
-          color: #94a3b8;
-          font-size: 0.85rem;
-          cursor: pointer;
-          transition: all var(--transition-fast);
-        }
-
-        .category-tab:hover {
-          border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .category-tab.active {
-          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-          color: white;
-          border-color: transparent;
-        }
-
-        .rules-list {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-        }
-
-        .rule-card {
-          background: rgba(15, 23, 42, 0.6);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          border-radius: var(--radius-lg);
-          padding: 1.25rem;
-        }
-
-        .rule-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 0.75rem;
-        }
-
-        .rule-status {
-          padding: 0.25rem 0.75rem;
-          border-radius: 9999px;
-          font-size: 0.75rem;
-          font-weight: 600;
-        }
-
-        .rule-category {
-          padding: 0.25rem 0.625rem;
-          background: rgba(59, 130, 246, 0.15);
-          border-radius: 9999px;
-          font-size: 0.75rem;
-          color: #60a5fa;
-        }
-
-        .rule-name {
-          font-size: 1rem;
-          margin-bottom: 0.5rem;
-        }
-
-        .rule-details {
-          font-size: 0.9rem;
-          color: #94a3b8;
-          line-height: 1.6;
-          margin-bottom: 1rem;
-        }
-
-        .rule-footer {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding-top: 0.75rem;
-          border-top: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .last-checked {
-          font-size: 0.8rem;
-          color: #64748b;
-        }
-
-        /* Timeline Visualization */
-        .timeline-visualization {
-          background: rgba(30, 41, 59, 0.3);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: var(--radius-xl);
-          padding: var(--space-xl);
-        }
-
-        .timeline-header h3 {
-          margin-bottom: var(--space-sm);
-        }
-
-        .timeline-header p {
-          color: #64748b;
-          font-size: 0.9rem;
-          margin-bottom: var(--space-lg);
-        }
-
-        .timeline-container {
-          position: relative;
-          max-height: 500px;
-          overflow-y: auto;
-          padding-left: 2rem;
-        }
-
-        .timeline-line {
-          position: absolute;
-          left: 8px;
-          top: 0;
-          bottom: 0;
-          width: 2px;
-          background: linear-gradient(180deg, #3b82f6, #8b5cf6, #10b981);
-          opacity: 0.3;
-        }
-
-        .timeline-entry {
-          position: relative;
-          padding: 1rem 0 1rem 1.5rem;
-          cursor: pointer;
-          transition: background var(--transition-fast);
-          border-radius: var(--radius-md);
-        }
-
-        .timeline-entry:hover {
-          background: rgba(255, 255, 255, 0.02);
-        }
-
-        .timeline-entry.selected {
-          background: rgba(59, 130, 246, 0.1);
-        }
-
-        .timeline-dot {
-          position: absolute;
-          left: -1.5rem;
-          top: 1.25rem;
-          width: 18px;
-          height: 18px;
-          border-radius: 50%;
-          background: #1e293b;
-          border: 2px solid;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .timeline-dot[data-action="decision"] { border-color: #8b5cf6; }
-        .timeline-dot[data-action="reasoning"] { border-color: #3b82f6; }
-        .timeline-dot[data-action="execution"] { border-color: #10b981; }
-        .timeline-dot[data-action="correction"] { border-color: #f59e0b; }
-        .timeline-dot[data-action="validation"] { border-color: #06b6d4; }
-
-        .dot-icon {
-          font-size: 0.65rem;
-        }
-
-        .timeline-content {
-          background: rgba(15, 23, 42, 0.4);
-          border-radius: var(--radius-md);
-          padding: 0.875rem 1rem;
-        }
-
-        .timeline-main {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          margin-bottom: 0.5rem;
-        }
-
-        .timeline-agent {
-          font-weight: 600;
-          color: #e2e8f0;
-          font-size: 0.9rem;
-        }
-
-        .timeline-action {
-          padding: 0.125rem 0.5rem;
-          background: rgba(139, 92, 246, 0.15);
-          border-radius: 4px;
-          font-size: 0.75rem;
-          color: #a78bfa;
-        }
-
-        .timeline-time {
-          margin-left: auto;
-          font-size: 0.8rem;
-          color: #64748b;
-        }
-
-        .timeline-preview {
-          font-size: 0.85rem;
-          color: #94a3b8;
-          margin-bottom: 0.5rem;
-        }
-
-        .timeline-confidence {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-
-        .mini-bar {
-          flex: 1;
-          height: 4px;
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 2px;
-          overflow: hidden;
-        }
-
-        .mini-fill {
-          height: 100%;
-          border-radius: 2px;
-          transition: width var(--transition-normal);
-        }
-
-        .timeline-detail-popover {
-          position: fixed;
-          bottom: 2rem;
-          right: 2rem;
-          background: #1e293b;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: var(--radius-lg);
-          padding: 1.25rem;
-          max-width: 400px;
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-          z-index: 100;
-        }
-
-        .popover-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 1rem;
-          padding-bottom: 0.75rem;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .popover-header button {
-          background: none;
-          border: none;
-          color: #94a3b8;
-          cursor: pointer;
-        }
-
-        .popover-body p {
-          margin-bottom: 0.5rem;
-          font-size: 0.9rem;
-        }
-
-        /* Cryptographic Proof Panel */
-        .crypto-proof-panel {
-          background: rgba(30, 41, 59, 0.3);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: var(--radius-xl);
-          padding: var(--space-xl);
-        }
-
-        .crypto-metrics {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-          gap: 1rem;
-          margin-bottom: var(--space-lg);
-        }
-
-        .crypto-metric {
-          background: rgba(15, 23, 42, 0.6);
-          border-radius: var(--radius-md);
-          padding: 1rem;
-        }
-
-        .crypto-metric .metric-label {
-          display: block;
-          font-size: 0.8rem;
-          color: #64748b;
-          margin-bottom: 0.375rem;
-        }
-
-        .crypto-metric .metric-value {
-          font-size: 0.9rem;
-          color: #e2e8f0;
-        }
-
-        .crypto-metric .metric-value.hash {
-          color: #10b981;
-          word-break: break-all;
-        }
-
-        .verification-section {
-          margin-bottom: var(--space-lg);
-        }
-
-        .btn.verifying {
-          opacity: 0.7;
-          cursor: wait;
-        }
-
-        .spinner {
-          display: inline-block;
-          width: 16px;
-          height: 16px;
-          border: 2px solid transparent;
-          border-top-color: currentColor;
-          border-radius: 50%;
-          animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-
-        .verification-result {
-          margin-top: 1rem;
-          padding: 1.25rem;
-          border-radius: var(--radius-lg);
-          display: flex;
-          gap: 1rem;
-          align-items: flex-start;
-        }
-
-        .verification-result.valid {
-          background: rgba(16, 185, 129, 0.1);
-          border: 1px solid rgba(16, 185, 129, 0.3);
-        }
-
-        .verification-result.invalid {
-          background: rgba(239, 68, 68, 0.1);
-          border: 1px solid rgba(239, 68, 68, 0.3);
-        }
-
-        .result-icon {
-          font-size: 1.5rem;
-        }
-
-        .verification-result.valid .result-icon { color: #10b981; }
-        .verification-result.invalid .result-icon { color: #ef4444; }
-
-        .result-details strong {
-          display: block;
-          margin-bottom: 0.25rem;
-        }
-
-        .result-details p {
-          font-size: 0.9rem;
-          margin: 0;
-        }
-
-        .hash-chain-viz h4 {
-          margin-bottom: var(--space-md);
-        }
-
-        .chain-display {
-          background: rgba(15, 23, 42, 0.6);
-          border-radius: var(--radius-md);
-          padding: 1.25rem;
-          overflow-x: auto;
-        }
-
-        .chain-link {
-          display: inline-flex;
-          align-items: center;
-        }
-
-        .chain-node {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding: 0.5rem 0.75rem;
-          background: rgba(30, 41, 59, 0.8);
-          border-radius: var(--radius-sm);
-          border: 1px solid rgba(16, 185, 129, 0.3);
-        }
-
-        .node-index {
-          font-size: 0.7rem;
-          color: #64748b;
-        }
-
-        .node-hash {
-          font-family: monospace;
-          font-size: 0.75rem;
-          color: #10b981;
-        }
-
-        .chain-connector {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding: 0 0.5rem;
-          color: #64748b;
-        }
-
-        .connector-arrow {
-          font-size: 1rem;
-        }
-
-        .connector-label {
-          font-size: 0.65rem;
-        }
-
-        .chain-ellipsis {
-          display: inline-block;
-          padding: 0.5rem 0.75rem;
-          color: #64748b;
-          font-size: 0.85rem;
-        }
-
-        /* Access Control Matrix */
-        .access-control-matrix {
-          background: rgba(30, 41, 59, 0.3);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: var(--radius-xl);
-          padding: var(--space-xl);
-        }
-
-        .matrix-header h3 {
-          margin-bottom: var(--space-sm);
-        }
-
-        .matrix-header p {
-          color: #64748b;
-          font-size: 0.9rem;
-          margin-bottom: var(--space-lg);
-        }
-
-        .role-stats {
-          display: flex;
-          gap: 1rem;
-          margin-bottom: var(--space-lg);
-          flex-wrap: wrap;
-        }
-
-        .role-stat {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.5rem 1rem;
-          background: rgba(15, 23, 42, 0.6);
-          border-radius: var(--radius-md);
-        }
-
-        .role-name {
-          font-weight: 500;
-          color: #e2e8f0;
-        }
-
-        .role-count {
-          font-size: 0.85rem;
-          color: #64748b;
-        }
-
-        .matrix-table-container {
-          overflow-x: auto;
-          margin-bottom: var(--space-md);
-        }
-
-        .matrix-table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 0.9rem;
-        }
-
-        .matrix-table th,
-        .matrix-table td {
-          padding: 0.875rem 1rem;
-          text-align: left;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .matrix-table th {
-          background: rgba(15, 23, 42, 0.6);
-          font-weight: 600;
-          color: #94a3b8;
-          text-transform: uppercase;
-          font-size: 0.8rem;
-          letter-spacing: 0.05em;
-        }
-
-        .permission-cell {
-          display: flex;
-          flex-direction: column;
-          gap: 0.25rem;
-        }
-
-        .perm-category {
-          font-size: 0.7rem;
-          color: #64748b;
-          text-transform: uppercase;
-        }
-
-        .perm-name {
-          color: #e2e8f0;
-        }
-
-        .access-cell {
-          text-align: center;
-        }
-
-        .access-icon {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          width: 28px;
-          height: 28px;
-          border-radius: 50%;
-          font-weight: 600;
-          font-size: 0.85rem;
-        }
-
-        .access-icon.granted {
-          background: rgba(16, 185, 129, 0.15);
-          color: #10b981;
-        }
-
-        .access-icon.denied {
-          background: rgba(239, 68, 68, 0.15);
-          color: #ef4444;
-        }
-
-        .matrix-legend {
-          display: flex;
-          gap: 1.5rem;
-          justify-content: center;
-        }
-
-        .matrix-legend .legend-item {
-          display: flex;
-          align-items: center;
-          gap: 0.375rem;
-          font-size: 0.85rem;
-          color: #94a3b8;
-        }
-
-        /* Section Headers */
-        .features-showcase h2,
-        .integration-section h2,
-        .related-section h2 {
-          margin-bottom: var(--space-lg);
-        }
-
-        .section-description {
-          color: #94a3b8;
-          margin-bottom: var(--space-xl);
-          font-size: 1.05rem;
-        }
-
-        /* Code Block */
-        .code-block {
-          background: #0d1117;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: var(--radius-lg);
-          overflow: hidden;
-        }
-
-        .code-block pre {
-          padding: var(--space-xl);
-          overflow-x: auto;
-        }
-
-        .code-block code {
-          font-family: 'Fira Code', 'JetBrains Mono', monospace;
-          font-size: 0.875rem;
-          line-height: 1.7;
-          color: #e2e8f0;
-        }
-
-        /* Related Section */
-        .related-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-          gap: var(--space-lg);
-        }
-
-        /* Actions */
-        .actions-section {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: var(--space-2xl) 0;
-          border-top: 1px solid rgba(255, 255, 255, 0.05);
-          margin-top: var(--space-2xl);
-        }
-
-        @media (max-width: 768px) {
-          .actions-section {
-            flex-direction: column;
-            gap: var(--space-md);
-          }
-          
-          .hero-stats {
-            gap: var(--space-lg);
-          }
-          
-          .features-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .tab-bar {
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-          }
-
-          .tab-btn {
-            flex-shrink: 0;
-          }
-        }
-      `}</style>
+      </div>
     </div>
   )
 }
