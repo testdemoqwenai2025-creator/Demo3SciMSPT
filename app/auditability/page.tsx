@@ -550,7 +550,7 @@ function CryptoDemo() {
     setIsComputing(false)
   }
 
-  const computeHashChain = async () => {
+  const handleComputeHashChain = async () => {
     setChainVerified(null)
     const hashes = await computeHashChain(chainInput)
     setHashChain(hashes)
@@ -675,7 +675,7 @@ function CryptoDemo() {
               + Add Block
             </button>
             <button
-              onClick={computeHashChain}
+              onClick={handleComputeHashChain}
               className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-sm font-medium transition-colors"
             >
               Compute Chain
@@ -1205,8 +1205,8 @@ function ComplianceReportGenerator() {
                   : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
               }`}
             >
-              {fw} {fw !== 'all && stats.byFramework.find(f => f.name === fw) && 
-                `(${stats.byFramework.find(f => f.name === fw!.checked}/${stats.byFramework.find(f => f.name === fw)!.total})`
+              {fw} {fw !== 'all' && stats.byFramework.find(f => f.name === fw) && 
+                `(${stats.byFramework.find(f => f.name === fw)!.checked}/${stats.byFramework.find(f => f.name === fw)!.total})`
               }
             </button>
           ))}

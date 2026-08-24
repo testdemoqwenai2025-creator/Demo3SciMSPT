@@ -922,7 +922,7 @@ export default function MAOLPage() {
                   <span className="chip">User_Preference: TypeScript</span>
                   <span className="chip">Domain: Architecture</span>
                   <span className="chip">Topic: MAOL</span>
-                  <span class="chip">Session: Active</span>
+                  <span className="chip">Session: Active</span>
                 </div>
               </div>
             </div>

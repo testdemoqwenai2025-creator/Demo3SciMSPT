@@ -202,9 +202,9 @@ export default function PluginSystemPage() {
     } else {
       // Pre-install some plugins for demo
       const preInstalled = new Map<string, InstalledPlugin>()
-      preInstalled.set('data-exporter', { enabled: true, installedAt: new Date('2024-01-10'), usageCount: 47 })
-      preInstalled.set('audit-logger', { enabled: true, installedAt: new Date('2024-01-08'), usageCount: 156 })
-      preInstalled.set('theme-editor', { enabled: false, installedAt: new Date('2024-01-05'), usageCount: 23 })
+      preInstalled.set('data-exporter', { id: 'data-exporter', enabled: true, installedAt: new Date('2024-01-10'), usageCount: 47 })
+      preInstalled.set('audit-logger', { id: 'audit-logger', enabled: true, installedAt: new Date('2024-01-08'), usageCount: 156 })
+      preInstalled.set('theme-editor', { id: 'theme-editor', enabled: false, installedAt: new Date('2024-01-05'), usageCount: 23 })
       setInstalledPlugins(preInstalled)
     }
   }, [])
@@ -249,6 +249,7 @@ export default function PluginSystemPage() {
     
     setTimeout(() => {
       setInstalledPlugins(prev => new Map(prev).set(showPermissionModal.id, {
+        id: showPermissionModal.id,
         enabled: true,
         installedAt: new Date(),
         usageCount: 0

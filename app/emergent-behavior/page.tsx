@@ -446,8 +446,8 @@ export default function EmergentBehaviorPage() {
             </div>
             <p className="card-desc">Conway&apos;s Game of Life — simple rules creating complex emergent patterns. Click to add disturbances.</p>
             
-            <div className="canvas-container" onClick={handleCanvasClick}>
-              <canvas ref={canvasRef} className="life-canvas"></canvas>
+            <div className="canvas-container">
+              <canvas ref={canvasRef} className="life-canvas" onClick={handleCanvasClick}></canvas>
               <div className="canvas-overlay">
                 <div className="viz-stats">
                   <div className="viz-stat">

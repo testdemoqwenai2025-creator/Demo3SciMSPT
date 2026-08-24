@@ -148,8 +148,8 @@ export default function IntelligenceGraphPage() {
   // Get visible edges based on timeline
   const getVisibleEdges = useCallback(() => {
     return edges.filter(e => e.source && e.target && 
-      nodes.find(n => n.id === e.source)?.dayAdded <= timelineDay &&
-      nodes.find(n => n.id === e.target)?.dayAdded <= timelineDay &&
+      (nodes.find(n => n.id === e.source)?.dayAdded ?? 0) <= timelineDay &&
+      (nodes.find(n => n.id === e.target)?.dayAdded ?? 0) <= timelineDay &&
       e.dayAdded <= timelineDay
     )
   }, [edges, nodes, timelineDay])
@@ -194,7 +194,7 @@ export default function IntelligenceGraphPage() {
         edges: [
           INITIAL_EDGES.find(e => e.id === 'e1')!,
           INITIAL_EDGES.find(e => e.id === 'e2')!,
-          INITIAL_EDges.find(e => e.id === 'e3')!
+          INITIAL_EDGES.find(e => e.id === 'e3')!
         ].filter(Boolean),
         explanation: 'SciMSPT integrates MAOL for orchestration, employs Neural Tracking for privacy, and renders via Spatial UI.'
       }

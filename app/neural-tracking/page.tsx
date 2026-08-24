@@ -464,7 +464,7 @@ export default function NeuralTrackingPage() {
         <div className="legend">
           <div className="legend-item">
             <span className="legend-dot idle"></span>
-            Idle (< 30%)
+            Idle {'<'} 30%)
           </div>
           <div className="legend-item">
             <span className="legend-dot active"></span>
@@ -472,7 +472,7 @@ export default function NeuralTrackingPage() {
           </div>
           <div className="legend-item">
             <span className="legend-dot firing"></span>
-            Firing (> 70%)
+            Firing {'>'} 70%)
           </div>
           <div className="legend-item">
             <span className="legend-signal"></span>
