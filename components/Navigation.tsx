@@ -54,6 +54,12 @@ const navigationItems = [
     icon: '🔄',
     description: 'Self-Optimization Engine' 
   },
+  { 
+    name: 'Auditability', 
+    href: '/auditability', 
+    icon: '🔍',
+    description: 'Immutable Audit Trail & Traceability' 
+  },
 ]
 
 export function Navigation() {

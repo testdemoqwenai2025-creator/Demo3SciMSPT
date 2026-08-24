@@ -1,10 +1,7 @@
-import type { Metadata } from 'next'
+'use client'
+
 import Link from 'next/link'
 
-export const metadata: Metadata = {
-  title: 'Intelligence Graph - Semantic Knowledge Network | SciMSPT',
-  description: 'Unified semantic knowledge network with vector embeddings and entity relationship mapping.',
-}
 
 export default function IntelligenceGraphPage() {
   return (

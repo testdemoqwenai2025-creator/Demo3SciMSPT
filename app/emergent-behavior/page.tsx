@@ -1,10 +1,7 @@
-import type { Metadata } from 'next'
+'use client'
+
 import Link from 'next/link'
 
-export const metadata: Metadata = {
-  title: 'Emergent Behavior - Self-Optimization Engine | SciMSPT',
-  description: 'Autonomous system improvement through continuous learning feedback loops and pattern discovery.',
-}
 
 export default function EmergentBehaviorPage() {
   return (

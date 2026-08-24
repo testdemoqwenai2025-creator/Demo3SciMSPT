@@ -1,10 +1,7 @@
-import type { Metadata } from 'next'
+'use client'
+
 import Link from 'next/link'
 
-export const metadata: Metadata = {
-  title: 'Plugin System - Secure Extensible Ecosystem | SciMSPT',
-  description: 'Isolated iframe sandbox execution with granular permission scopes for safe extensibility.',
-}
 
 export default function PluginSystemPage() {
   return (

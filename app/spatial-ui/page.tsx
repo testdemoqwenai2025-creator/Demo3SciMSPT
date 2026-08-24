@@ -1,10 +1,7 @@
-import type { Metadata } from 'next'
+'use client'
+
 import Link from 'next/link'
 
-export const metadata: Metadata = {
-  title: 'Spatial UI - Immersive Interfaces | SciMSPT',
-  description: 'Three.js & WebGPU powered 3D interface components for next-generation interactions.',
-}
 
 export default function SpatialUIPage() {
   return (

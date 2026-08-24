@@ -1,4 +1,5 @@
-import type { Metadata } from 'next'
+'use client'
+
 import { PillarCard } from '@/components/PillarCard'
 import Link from 'next/link'
 
@@ -12,11 +13,6 @@ import Link from 'next/link'
  * 3. Include interactive components and code examples
  * 4. Display the architecture diagram with context
  */
-
-export const metadata: Metadata = {
-  title: 'MAOL - Multi-Agent Orchestrator Layer | SciMSPT',
-  description: 'Detailed view of the Multi-Agent Orchestrator Layer architecture, components, and integration guide.',
-}
 
 const maolComponents = [
   {

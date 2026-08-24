@@ -1,10 +1,7 @@
-import type { Metadata } from 'next'
+'use client'
+
 import Link from 'next/link'
 
-export const metadata: Metadata = {
-  title: 'Neural Tracking - Behavior Intelligence | SciMSPT',
-  description: 'Privacy-first user intelligence system with on-device TensorFlow.js processing.',
-}
 
 export default function NeuralTrackingPage() {
   return (

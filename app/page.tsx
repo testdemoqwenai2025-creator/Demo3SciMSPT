@@ -1,3 +1,5 @@
+'use client'
+
 import { PillarCard } from '@/components/PillarCard'
 import { DiagramGallery } from '@/components/DiagramGallery'
 import Link from 'next/link'
@@ -69,6 +71,16 @@ const pillars = [
     status: 'Designed' as const,
     href: '/emergent-behavior',
     features: ['Feedback Loops', 'Adaptive Strategies', 'Pattern Discovery', 'Self-Tuning'],
+  },
+  {
+    id: 'auditability',
+    name: 'Auditability & Traceability',
+    fullName: 'Immutable Audit Trail System',
+    icon: '🔍',
+    description: 'Cryptographically secured reasoning logs enabling complete traceability of agent decision paths with regulatory compliance',
+    status: 'Designed' as const,
+    href: '/auditability',
+    features: ['Hash Chain Immutability', 'Decision Path Tracing', 'ML Anomaly Detection', 'GDPR/SOC2 Compliant'],
   },
 ]
 
