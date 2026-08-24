@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
+import { ThemeToggle } from './ThemeToggle'
 
 /**
  * Navigation Component - SciMSPT Phase 3
@@ -95,6 +96,9 @@ export function Navigation() {
             )
           })}
         </div>
+
+        {/* Theme Toggle - Visible on all screens */}
+        <ThemeToggle />
 
         {/* Mobile Menu Toggle */}
         <button

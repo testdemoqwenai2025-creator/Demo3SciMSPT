@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { Navigation } from '@/components/Navigation'
+import { DNAHelix } from '@/components/DNAHelix'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -16,14 +17,36 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" data-theme="dark" suppressHydrationWarning>
       <body className={inter.className}>
+        {/* DNA Helix Decorations - Left and Right sides */}
+        <DNAHelix side="left" />
+        <DNAHelix side="right" />
+        
         <div className="app-container">
           <Navigation />
           <main className="main-content">
             {children}
           </main>
         </div>
+
+        {/* Theme initialization script */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const savedTheme = localStorage.getItem('scimspt-theme');
+                  if (savedTheme) {
+                    document.documentElement.setAttribute('data-theme', savedTheme);
+                  } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
       </body>
     </html>
   )
