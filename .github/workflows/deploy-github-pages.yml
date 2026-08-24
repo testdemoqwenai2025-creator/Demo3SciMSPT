@@ -31,7 +31,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
@@ -39,6 +39,18 @@ jobs:
 
       - name: Build static export
         run: npm run build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+
+      - name: Check output exists
+        run: |
+          echo "Checking build output..."
+          ls -la out/ || echo "out directory not found"
+          ls -la out/_next/static/css/ || echo "CSS files not found"
+          if [ ! -d "out" ]; then
+            echo "::error::Build output directory 'out' not found"
+            exit 1
+          fi
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
