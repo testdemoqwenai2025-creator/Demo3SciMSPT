@@ -1,0 +1,40 @@
+2:I[9107,[],"ClientPageRoot"]
+3:I[1465,["29","static/chunks/29-7fa0a80312ac72f5.js","648","static/chunks/648-71f9989f2519c337.js","528","static/chunks/app/emergent-behavior/page-67ab5602df93e899.js"],"default",1]
+4:I[4707,[],""]
+5:I[6423,[],""]
+6:I[1418,["29","static/chunks/29-7fa0a80312ac72f5.js","648","static/chunks/648-71f9989f2519c337.js","185","static/chunks/app/layout-1613a8ca5d4f293b.js"],"DNAHelix"]
+7:I[6330,["29","static/chunks/29-7fa0a80312ac72f5.js","648","static/chunks/648-71f9989f2519c337.js","185","static/chunks/app/layout-1613a8ca5d4f293b.js"],"OfflineIndicator"]
+8:I[3650,["29","static/chunks/29-7fa0a80312ac72f5.js","648","static/chunks/648-71f9989f2519c337.js","185","static/chunks/app/layout-1613a8ca5d4f293b.js"],"ErrorBoundary"]
+9:I[4671,["29","static/chunks/29-7fa0a80312ac72f5.js","648","static/chunks/648-71f9989f2519c337.js","185","static/chunks/app/layout-1613a8ca5d4f293b.js"],"KeyboardShortcutsProvider"]
+a:I[7026,["29","static/chunks/29-7fa0a80312ac72f5.js","648","static/chunks/648-71f9989f2519c337.js","185","static/chunks/app/layout-1613a8ca5d4f293b.js"],"SubscriptionProvider"]
+b:I[5110,["29","static/chunks/29-7fa0a80312ac72f5.js","648","static/chunks/648-71f9989f2519c337.js","185","static/chunks/app/layout-1613a8ca5d4f293b.js"],"ToastProvider"]
+c:I[3165,["29","static/chunks/29-7fa0a80312ac72f5.js","648","static/chunks/648-71f9989f2519c337.js","185","static/chunks/app/layout-1613a8ca5d4f293b.js"],"Navigation"]
+d:I[6330,["29","static/chunks/29-7fa0a80312ac72f5.js","648","static/chunks/648-71f9989f2519c337.js","185","static/chunks/app/layout-1613a8ca5d4f293b.js"],"PWAInstallPrompt"]
+e:I[7026,["29","static/chunks/29-7fa0a80312ac72f5.js","648","static/chunks/648-71f9989f2519c337.js","185","static/chunks/app/layout-1613a8ca5d4f293b.js"],"UsageLimitWarning"]
+f:I[4431,["29","static/chunks/29-7fa0a80312ac72f5.js","648","static/chunks/648-71f9989f2519c337.js","160","static/chunks/app/not-found-55d5f1ea7999d9ed.js"],"default"]
+10:T4b6,
+                      // Initialize PWA Service Worker
+                      if ('serviceWorker' in navigator) {
+                        navigator.serviceWorker.register('/Demo3SciMSPT/sw.js', {
+                          scope: '/Demo3SciMSPT/'
+                        }).catch(() => console.log('SW registration failed'));
+                      }
+
+                      // Theme initialization
+                      try {
+                        const savedTheme = localStorage.getItem('scimspt-theme');
+                        if (savedTheme) {
+                          document.documentElement.setAttribute('data-theme', savedTheme);
+                        } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+                          document.documentElement.setAttribute('data-theme', 'light');
+                        }
+                      } catch (e) {}
+
+                      // Listen for upgrade modal events
+                      window.addEventListener('show-upgrade-modal', () => {
+                        const event = new CustomEvent('show-upgrade-modal-internal');
+                        window.dispatchEvent(event);
+                      });
+                    0:["cslMZ5wgckOCsHTFF1pIv",[[["",{"children":["emergent-behavior",{"children":["__PAGE__",{}]}]},"$undefined","$undefined",true],["",{"children":["emergent-behavior",{"children":["__PAGE__",{},[["$L1",["$","$L2",null,{"props":{"params":{},"searchParams":{}},"Component":"$3"}],null],null],null]},[null,["$","$L4",null,{"parallelRouterKey":"children","segmentPath":["children","emergent-behavior","children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L5",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","notFoundStyles":"$undefined"}]],null]},[[[["$","link","0",{"rel":"stylesheet","href":"/Demo3SciMSPT/_next/static/css/0c16faeca267d0f9.css","precedence":"next","crossOrigin":"$undefined"}]],["$","html",null,{"lang":"en","data-theme":"dark","suppressHydrationWarning":true,"children":[["$","head",null,{"children":[["$","link",null,{"rel":"manifest","href":"/Demo3SciMSPT/manifest.json"}],["$","meta",null,{"name":"apple-mobile-web-app-capable","content":"yes"}],["$","meta",null,{"name":"mobile-web-app-status-bar-style","content":"black-translucent"}],["$","meta",null,{"name":"application-name","content":"SciMSPT"}]]}],["$","body",null,{"className":"__className_628cd0","children":[["$","$L6",null,{"side":"left"}],["$","$L6",null,{"side":"right"}],["$","$L7",null,{}],["$","$L8",null,{"children":["$","$L9",null,{"children":["$","$La",null,{"children":["$","$Lb",null,{"children":[["$","div",null,{"className":"app-container","children":[["$","$Lc",null,{}],["$","div",null,{"className":"nav-extras","children":["$","$Ld",null,{}]}],["$","main",null,{"className":"main-content","children":[["$","$Le",null,{"type":"apiCalls"}],["$","$L4",null,{"parallelRouterKey":"children","segmentPath":["children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L5",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":["$","$Lf",null,{}],"notFoundStyles":[]}]]}]]}],["$","script",null,{"dangerouslySetInnerHTML":{"__html":"$10"}}]]}]}]}]}],["$","noscript",null,{"children":["$","div",null,{"style":{"padding":20,"textAlign":"center","color":"#f1f5f9"},"children":[["$","h1",null,{"children":"SciMSPT requires JavaScript to run properly"}],["$","p",null,{"children":"Please enable JavaScript to view this application."}]]}]}]]}]]}]],null],null],["$L11",null]]]]
+11:[["$","meta","0",{"name":"viewport","content":"width=device-width, initial-scale=1"}],["$","meta","1",{"charSet":"utf-8"}],["$","title","2",{"children":"SciMSPT - AI-Native Future-Proof Architecture"}],["$","meta","3",{"name":"description","content":"Phase 3: Multi-Agent Orchestrator Layer, Neural Tracking, Spatial UI, Plugin System, Intelligence Graph, Emergent Behavior | Built: 2026-08-24T15:22Z"}],["$","link","4",{"rel":"manifest","href":"/Demo3SciMSPT/manifest.json","crossOrigin":"use-credentials"}],["$","meta","5",{"name":"next-size-adjust"}]]
+1:null
