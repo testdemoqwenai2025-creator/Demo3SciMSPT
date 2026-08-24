@@ -175,7 +175,7 @@ jobs:
           echo "url=https://pr-${{ github.event.pull_request.number }}.demo.scimspt.ai" >> $GITHUB_OUTPUT
 
       - name: Comment PR with preview URL
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             github.rest.issues.createComment({
