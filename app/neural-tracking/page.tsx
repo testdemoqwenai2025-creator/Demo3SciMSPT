@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
+import { ChartWrapper, DashboardCharts } from '@/components/ChartWrapper'
 
 // Types
 interface Neuron {
@@ -794,6 +795,19 @@ export default function NeuralTrackingPage() {
             ⬆ Upgrade for Unlimited Access
           </a>
         </div>
+      </section>
+
+      {/* Interactive Data Visualization - Priority 1 Feature */}
+      <section className="charts-section" style={{ padding: '2rem 1.5rem', maxWidth: '1400px', margin: '0 auto' }}>
+        <div style={{ marginBottom: '2rem' }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#f1f5f9', marginBottom: '0.5rem' }}>
+            📊 Interactive Neural Analytics
+          </h2>
+          <p style={{ fontSize: '0.9rem', color: '#94a3b8' }}>
+            Real-time data visualization with live updates and interactive charts
+          </p>
+        </div>
+        <DashboardCharts />
       </section>
 
       {/* Navigation Actions */}

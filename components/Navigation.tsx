@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { ThemeToggle } from './ThemeToggle'
-import { SearchTrigger } from './Search'
+import { SearchModal } from './SearchModal'
 
 /**
  * Navigation Component - SciMSPT Phase 3
@@ -100,7 +100,7 @@ export function Navigation() {
 
         {/* Search & Theme - Visible on all screens */}
         <div className="nav-actions">
-          <SearchTrigger />
+          <SearchModal />
           <ThemeToggle />
         </div>
 
