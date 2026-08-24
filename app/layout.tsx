@@ -13,7 +13,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'SciMSPT - AI-Native Future-Proof Architecture',
-  description: 'Phase 3: Multi-Agent Orchestrator Layer, Neural Tracking, Spatial UI, Plugin System, Intelligence Graph, Emergent Behavior',
+  description: 'Phase 3: Multi-Agent Orchestrator Layer, Neural Tracking, Spatial UI, Plugin System, Intelligence Graph, Emergent Behavior | Built: 2026-08-24T15:22Z',
   manifest: '/Demo3SciMSPT/manifest.json',
   themeColor: '#3b82f6',
   viewport: {
