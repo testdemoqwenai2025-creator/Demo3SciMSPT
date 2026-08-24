@@ -80,7 +80,7 @@ jobs:
           head: HEAD
 
       - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         continue-on-error: true
 
   sast-analysis:
